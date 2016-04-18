@@ -1,0 +1,1 @@
+scratch code for study 
