@@ -42,6 +42,7 @@ func Crawl(url string, depth int, fetcher Fetcher, ch chan int) {
 	}
 
 	if depth <= 0 {
+		ch <- 1
 		return
 	}
 
