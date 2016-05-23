@@ -6,8 +6,9 @@ import os
 from BaseHTTPServer import BaseHTTPRequestHandler
 
 
-class SetKeyHandler(BaseHTTPRequestHandler):
 
+
+class SetKeyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         print(self.path)
         self.send_response(200)
@@ -21,6 +22,7 @@ class SetKeyHandler(BaseHTTPRequestHandler):
 
         basepath = ''.join(['.',urlparse.urlparse(self.path).path])
 
+        print(self.client_address)
 
         #print(dir(self.rfile))
         with open(basepath, 'w') as f:
