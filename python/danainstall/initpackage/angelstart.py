@@ -2,8 +2,30 @@
 import SocketServer
 import urlparse
 import os
+import tempfile
 
 from BaseHTTPServer import BaseHTTPRequestHandler
+
+def addSSHKey(pubkeyfile, hostip):
+    with open(pubkeyfile) as f:
+        text = f.read()
+        schema, pubkey, host = text.split()
+        if schema != "ssh-rsa":
+            raise ValueErr("wrong pub key schema")
+        home = os.path.expanduser("~")
+        if not home:
+            raise IOError("cant't open user's home dir")
+
+        home = '%s/.ssh'%home
+        if not os.path.exists(home):
+            os.mkdir(home, 0700)
+
+        with open('%s/authorized_keys'%home, "a+") as sshfile:
+            sshfile.write(text)
+
+
+
+
 
 
 
@@ -48,4 +70,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    addSSHKey('/root/.ssh/id_rsa.pub', '127.0.0.1')
