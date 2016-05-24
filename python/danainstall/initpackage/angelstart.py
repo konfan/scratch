@@ -6,8 +6,24 @@ import tempfile
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 
-def addSSHKey(pubkeyfile, hostip):
-    with open(pubkeyfile) as f:
+
+def readAuthorizedKeys():
+    home = os.path.expanduser("~")
+    authfile = '%s/.ssh/authorized_keys'%home
+    keys = set()
+    if os.path.exists(authfile):
+        with open(authfile, 'r') as f:
+            for x in f.readlines():
+                schema, pubkey, host = x.split()
+                keys.add(pubkey)
+    return keys
+
+
+
+
+def addSSHKey(pubkeyfile):
+    keys = readAuthorizedKeys()
+    with open(pubkeyfile, 'r') as f:
         text = f.read()
         schema, pubkey, host = text.split()
         if schema != "ssh-rsa":
@@ -20,43 +36,47 @@ def addSSHKey(pubkeyfile, hostip):
         if not os.path.exists(home):
             os.mkdir(home, 0700)
 
-        with open('%s/authorized_keys'%home, "a+") as sshfile:
-            sshfile.write(text)
-
-
-
-
-
+        if pubkey not in keys:
+            with open('%s/authorized_keys'%home, "a+") as sshfile:
+                if text[-1] != '\n':
+                    text += '\n'
+                sshfile.write(text)
 
 
 
 class SetKeyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        print(self.path)
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.send_header("Content-Length", len(self.path))
-        self.end_headers()
-        self.wfile.write(self.path)
+        msg = "Forbidden method: GET\n"
+        self.sendError(401, msg)
 
     def do_POST(self):
-        dlen = int(self.headers.get("Content-Length", 0))
+        basepath = urlparse.urlparse(self.path).path
+        dispatch = { '/addkey': self.addKey }
+        try:
+            dispatch[basepath]()
+        except KeyError:
+            self.sendError(401, "invalid path")
 
-        basepath = ''.join(['.',urlparse.urlparse(self.path).path])
 
-        print(self.client_address)
-
-        #print(dir(self.rfile))
-        with open(basepath, 'w') as f:
-            f.write(self.rfile.read(dlen))
-
-        print('write %d bytes'%dlen)
-        self.send_response(200)
+    def sendError(self, code, msg):
+        self.send_response(code)
         self.send_header("Content-type", "application/json")
-        self.send_header("Content-Length", len(self.path))
+        self.send_header("Content-Length",len(msg))
         self.end_headers()
-        self.wfile.write(self.path)
+        self.wfile.write(msg)
 
+    def addKey(self):
+        dlen = int(self.headers.get("Content-Length", 0))
+        fd,tmpfile = tempfile.mkstemp()
+        os.write(fd, self.rfile.read(dlen))
+        os.close(fd)
+        try:
+            addSSHKey(tmpfile)
+            self.send_response(200)
+        except Exception as e:
+            self.sendError(500, str(e))
+        finally:
+            os.remove(tmpfile)
 
 
 
@@ -70,5 +90,5 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
-    addSSHKey('/root/.ssh/id_rsa.pub', '127.0.0.1')
+    main()
+    #addSSHKey('/root/.ssh/id_rsa.pub')
