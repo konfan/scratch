@@ -11,19 +11,20 @@ def prepare_deploy():
 
 
 @parallel
+@roles('server2')
 def deploy():
     code_dir = '/opt/'
-    with cd(code_dir):
-        run("ls")
+    s = run("ls /")
+    print(dir(s))
+    print(s.succeeded)
 
-env.passwords = {'root@192.168.1.95:22':'server', 'root@192.168.1.93:22':'cayman'}
+#env.passwords = {'root@192.168.52.141:22':'qwe123asd'}
 
 @task
 def dowork():
-    host_list = ['192.168.1.95', '192.168.1.93']
-    execute(deploy, hosts = host_list)
-
-
+    env.roledefs.update({'server':['root@192.168.52.141']})
+    host_list = ['192.168.52.141']
+    execute(deploy, hosts = host_list, roles=['server'])
 
 dowork()
 
