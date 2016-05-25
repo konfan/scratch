@@ -51,7 +51,8 @@ class SetKeyHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         basepath = urlparse.urlparse(self.path).path
-        dispatch = { '/addkey': self.addKey }
+        dispatch = { '/addkey': self.addKey,
+                    '/shutdown': self.stop }
         try:
             dispatch[basepath]()
         except KeyError:
@@ -78,12 +79,24 @@ class SetKeyHandler(BaseHTTPRequestHandler):
         finally:
             os.remove(tmpfile)
 
+    def stop(self):
+        import thread
+        self.send_response(200)
+        thread.start_new_thread(shutdown, tuple())
+
+httpd_ins = None
+
+def shutdown():
+    global httpd_ins
+    httpd_ins.shutdown()
 
 
 def main():
+    global httpd_ins
     port = 8999
     SocketServer.TCPServer.allow_reuse_address = True
     httpd = SocketServer.TCPServer(('',port), SetKeyHandler)
+    httpd_ins = httpd
     print('serving at ', port)
     httpd.serve_forever()
 
