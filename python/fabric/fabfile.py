@@ -15,6 +15,7 @@ class Install(object):
             s = run("ls %s"%self.path)
             #print(dir(s))
             print(s.failed)
+            return s
 
     def __init__(self, path):
         self.path = path
@@ -23,7 +24,7 @@ class Install(object):
 def deploy(path):
     code_dir = '/opt/'
     ins = Install(path)
-    ins()
+    return ins()
 
 #env.passwords = {'root@192.168.52.141:22':'qwe123asd'}
 env.passwords = {'root@192.168.1.93:22':'cayman', 'root@192.168.1.95:22':'server'}
@@ -35,9 +36,10 @@ def dowork(path):
     #host_list = ['192.168.1.93', '192.168.1.95']
     
     #execute(deploy, hosts = host_list, roles=['server'])
-    execute(deploy, path, roles=['meta', 'server'])
+    return execute(deploy, path, roles=['meta', 'server'])
 
 if __name__ == '__main__':
     import sys
-    dowork(sys.argv[1])
+    v = dowork(sys.argv[1])
+    print v
 
