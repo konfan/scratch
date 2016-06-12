@@ -1,6 +1,7 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
+from .core import ExecutePlan
 
 
 def load(conffile):
@@ -9,10 +10,6 @@ def load(conffile):
 
 
 
-class ExecutePlan(object):
-    def __init__(self):
-        pass
-    pass
 
 
 

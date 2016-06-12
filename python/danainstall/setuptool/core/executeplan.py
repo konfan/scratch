@@ -1,6 +1,6 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
+import fabric
 
 
 class Command(object):
@@ -15,7 +15,15 @@ class Command(object):
 
 
 class Target(object):
-    pass
+    """
+    save host ip
+    """
+    def __init__(self, ip = None, roles = []):
+        self.host = ip
+        self.roles = roles
+
+
+
 
 
 
