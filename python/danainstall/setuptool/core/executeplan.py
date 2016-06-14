@@ -1,51 +1,33 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-import fabric
+from fabric.api import settings, run
+
+
+def DefaultHook(runret):
+    return runret
+
 
 
 class Command(object):
-    def __init__(self, cmd, hookmethod = None, title = None):
+    def __init__(self, cmd, hookmethod = DefaultHook, title = None):
         self.title = title or ("Command: %s"%cmd)
         self.cmd = cmd
-        self.callback = callback
+        self.hookmethod = hookmethod
         self.retcode = None
 
     #def execute(self, host):
     #    return execute(self.__run, host = host)
-
-    def exec(self, host):
+    def start(self, host):
         with settings(host_string = host):
             v = run(self.cmd)
 
-        hook = hookmethod(v)
-        return hook()
+        return self.hookmethod(v)
         
-
-
-class DefaultHook(object):
-    def __init__(self, runret):
-        self.ret = runret
-
-    def __call__(self):
-        if self.ret.succeeded:
-            return self.ret
-
-        else:
-            return ''
-#class Target(object):
-#    """
-#    save host ip
-#    """
-#    def __init__(self, hosts = None, roles = []):
-#        self.host = ip
-#        self.roles = roles
-
-
 
 class ExecutePlan(object):
     def __init__(self, commands):
         self.commands = commands
-        pass
 
-    def run():
-        pass
+    def execute(self):
+        for command in commands:
+            command.start()
