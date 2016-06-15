@@ -18,7 +18,7 @@ class Command(object):
     #def execute(self, host):
     #    return execute(self.__run, host = host)
     def start(self, host):
-        with settings(host_string = host):
+        with settings(host_string = host, warn_only = True):
             v = run(self.cmd)
 
         return self.hookmethod(v)
@@ -29,5 +29,6 @@ class ExecutePlan(object):
         self.commands = commands
 
     def execute(self):
-        for command in commands:
-            command.start()
+        l = [command.start() for command in commands]
+
+        return l
