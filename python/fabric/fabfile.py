@@ -36,7 +36,7 @@ def dowork(path):
     #host_list = ['192.168.1.93', '192.168.1.95']
     
     #execute(deploy, hosts = host_list, roles=['server'])
-    return execute(deploy, path, roles=['meta', 'server'])
+    return execute(deploy, path, roles=['meta'])
 
 if __name__ == '__main__':
     import sys
