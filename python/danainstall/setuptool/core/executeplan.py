@@ -34,5 +34,4 @@ class ExecutePlan(object):
 
     def execute(self):
         l = [command.start() for command in commands]
-
         return l

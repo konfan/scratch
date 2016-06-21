@@ -13,7 +13,7 @@
 # limitations under the License.
 
 __all__ = (
-    'PackStackError',
+    'DanaError',
 
     'InstallError',
     'FlagValidationError',
@@ -28,10 +28,10 @@ __all__ = (
 )
 
 
-class PackStackError(Exception):
+class DanaError(Exception):
     """Default Exception class for packstack installer."""
     def __init__(self, *args, **kwargs):
-        super(PackStackError, self).__init__(*args)
+        super(DanaError, self).__init__(*args)
         self.stdout = kwargs.get('stdout', None)
         self.stderr = kwargs.get('stderr', None)
 
@@ -40,12 +40,12 @@ class PuppetError(Exception):
     """Raised when Puppet will have some problems."""
 
 
-class MissingRequirements(PackStackError):
+class MissingRequirements(DanaError):
     """Raised when minimum install requirements are not met."""
     pass
 
 
-class InstallError(PackStackError):
+class InstallError(DanaError):
     """Exception for generic errors during setup run."""
     pass
 
@@ -60,7 +60,7 @@ class ParamValidationError(InstallError):
     pass
 
 
-class PluginError(PackStackError):
+class PluginError(DanaError):
     pass
 
 
@@ -68,22 +68,16 @@ class ParamProcessingError(PluginError):
     pass
 
 
-class NetworkError(PackStackError):
+class NetworkError(DanaError):
     """Should be used for packstack's network failures."""
     pass
 
 
-class ScriptRuntimeError(PackStackError):
-    """
-    Raised when utils.ScriptRunner.execute does not end successfully.
-    """
-    pass
 
-
-class ExecuteRuntimeError(PackStackError):
+class ExecuteRuntimeError(DanaError):
     """Raised when utils.execute does not end successfully."""
 
 
-class SequenceError(PackStackError):
+class SequenceError(DanaError):
     """Exception for errors during setup sequence run."""
     pass
