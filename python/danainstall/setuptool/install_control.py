@@ -3,6 +3,7 @@
 import launcher
 import logging
 import traceback
+from exceptions import *
 
 LOGFILE = 'install.log'
 
@@ -23,7 +24,7 @@ def initlogger(debug):
             logging.root.setLevel(logging.INFO)
     except:
         logging.error(traceback.format_exc())
-        raise Exception("log error")
+        raise LogRuntimeError("log error")
 
     return logfile
 
