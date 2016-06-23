@@ -21,9 +21,9 @@ except ImportError:
 import re
 import socket
 import logging
-from ..exceptions import NetworkError
-from .shell import execute
-from .shell import ScriptRunner
+from exceptions import NetworkError
+from shell import execute
+from shell import ScriptRunner
 
 
 def get_localhost_ip():

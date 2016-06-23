@@ -3,7 +3,7 @@
 import launcher
 import logging
 import traceback
-from exceptions import *
+from utils.exceptions import *
 
 LOGFILE = 'install.log'
 

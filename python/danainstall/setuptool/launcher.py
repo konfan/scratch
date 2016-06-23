@@ -1,22 +1,42 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-import ConfigParser
 from core import *
+from utils.exceptions import *
+import ConfigParser
+import basedefs
+import sys
+import os
+import logging
+import traceback
+
 
 config = ConfigParser.SafeConfigParser()
 
 modules = []
 
-def has_plugins(sec):
-    return True
 
-def load(conffile):
-    config.read(conffile)
+def loadplugins(sec):
+    sys.path.append(basedefs.DIR_PLUGINS)
+    mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%sec)    
+    if not os.path.isfile(mod):
+        raise InstallError("failed load plugin for %s"%sec)
+
+    module = __import__(sec)
+    module.__file__ = mod
+    globals()[sec] = module
+    return module
+
+
+def load(conf):
+    config.read(conf)
     for sec in config.sections():
-        if has_plugins(sec):
-            modules.append(sec)
+        try:
+            modules.append(loadplugins(sec))
+        except Exception as e:
+            logging.error(e)
+            logging.error(traceback.format_exc())
+            raise InstallError("failed when load plugins")
 
     #generate executeplan
-    pass
-
+    print(globals().keys())

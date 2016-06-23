@@ -18,10 +18,10 @@ import types
 import logging
 import subprocess
 
-from ..exceptions import ExecuteRuntimeError
-from ..exceptions import NetworkError
-from ..exceptions import ScriptRuntimeError
-from .strings import mask_string
+from exceptions import ExecuteRuntimeError
+from exceptions import NetworkError
+from exceptions import ScriptRuntimeError
+from strings import mask_string
 
 
 block_fmt = ("\n============= %(title)s ==========\n%(content)s\n"

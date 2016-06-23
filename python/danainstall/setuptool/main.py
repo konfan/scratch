@@ -9,16 +9,22 @@ import install_control
 
 
 def main():
-    conffile = ""
+    import sys
+    conffile = "test.conf"
     
     lau = launcher.load(conffile)
 
-    ctl = install_control.start(lau)
+    #ctl = install_control.start(lau)
 
-    server = http_server()
+    #server = http_server()
 
-    server.setctl(ctl)
-    server.start()
+    #server.setctl(ctl)
+    #server.start()
 
-    ctl.wait()
-    server.stop()
+    #ctl.wait()
+    #server.stop()
+    launcher.danainstall.setup()
+
+
+if __name__ == '__main__':
+    main()

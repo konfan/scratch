@@ -52,5 +52,10 @@ class ExecuteRuntimeError(DanaError):
 class LogRuntimeError(DanaError):
     pass
 
+class NetworkError(DanaError):
+    pass
 
+
+class ScriptRuntimeError(DanaError):
+    pass
 
