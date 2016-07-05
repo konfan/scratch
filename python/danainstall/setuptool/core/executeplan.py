@@ -29,9 +29,17 @@ class Command(object):
         
 
 class ExecutePlan(object):
-    def __init__(self, commands):
+    def __init__(self, commands, level, target):
         self.commands = commands
+        self.level = level
+        self.targets = targets
 
     def execute(self):
         l = [command.start() for command in commands]
         return l
+
+    def install(self):
+        pass
+
+    def __lt__(self, other):
+        return self.level < other.level

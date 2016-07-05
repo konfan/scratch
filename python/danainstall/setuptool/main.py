@@ -13,8 +13,9 @@ def main():
     conffile = "test.conf"
     
     lau = launcher.load(conffile)
+    print(lau)
 
-    #ctl = install_control.start(lau)
+    ctl = install_control.InstallControl(lau)
 
     #server = http_server()
 
@@ -24,6 +25,9 @@ def main():
     #ctl.wait()
     #server.stop()
     launcher.danainstall.setup()
+    http_server.start()
+    ln = sys.stdin.readline()
+    http_server.stop()
 
 
 if __name__ == '__main__':

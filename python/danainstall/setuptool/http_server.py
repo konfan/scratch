@@ -176,4 +176,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #addSSHKey('/root/.ssh/id_rsa.pub')

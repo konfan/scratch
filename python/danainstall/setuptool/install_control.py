@@ -41,24 +41,31 @@ def start(launcherobj):
 
 class InstallControl(object):
 
-    def __init__(self):
+    def __init__(self, modules):
         #load modules 
-        for modules in installlist:
-            # load modules
-            pass
-        pass
+        self.modules = dict([(m.__name__, m) for m in modules])
+        self.manager = []
 
 
     def startAll(self):
         pass
 
     def addPlugin(self, plugin):
-        pass
+        self.modules.update(plugin.__name__, plugin)
 
 
     def getAllPlugins(self):
-        pass
+        return self.modules.keys()
+
+    def genExecPlan(self):
+        # module sequence
+        modulestree = []
+        planlist = []
+
+        for v in modulestree:
+            planlist.append(v.make(launcher.config))
+
+        
 
 
-    def addExecPlan(self, plan):
-        pass
+

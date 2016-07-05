@@ -60,7 +60,6 @@ FILE_INSTALLER_LOG = "setup.log"
 
 DIR_PROJECT_DIR = os.environ.get('INSTALLER_PROJECT_DIR', os.getcwd())
 DIR_PLUGINS = os.path.join(DIR_PROJECT_DIR, "plugins")
-DIR_MODULES = os.path.join(DIR_PROJECT_DIR, "modules")
 
 EXEC_NSLOOKUP = "nslookup"
 EXEC_CHKCONFIG = "chkconfig"
