@@ -30,5 +30,21 @@ def main():
     http_server.stop()
 
 
+def draft():
+    commandlist = plugin.makescript()
+    eg = ["ls", "cd ..", "./install"]
+
+    pl_common = ExecutePlan(commandlist, level = 0, target = [,])
+
+    pool = Pool()
+    for task in pl_common.tasks():
+        pool.add(task)
+
+    pl_common.status()
+
+
+
+
+
 if __name__ == '__main__':
     main()
