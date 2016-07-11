@@ -1,6 +1,6 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-from fabric.api import settings, run
+from fabric.api import settings, run, put
 import sys, StringIO
 
 
@@ -9,7 +9,7 @@ def DefaultHook(runret):
 
 
 
-class Command(object):
+class RemoteCommand(object):
     def __init__(self, cmd, hookmethod = DefaultHook, title = None, 
             stdout = sys.stdout, stderr = sys.stderr):
         self.title = title or ("Command: %s"%cmd)
@@ -19,13 +19,21 @@ class Command(object):
         self.stdout = stdout
         self.stderr = stderr
 
-    #def execute(self, host):
-    #    return execute(self.__run, host = host)
-    def start(self, host):
+    def __call__(self, host):
         with settings(host_string = host, warn_only = True ):
             v = run(self.cmd, shell = False, stdout = self.stdout, stderr = self.stderr)
 
         return self.hookmethod(v)
+
+class FileTransfer(object):
+    def __init__(self, localpath, remotepath):
+        self.localpath = localpath
+        self.remotepath = remotepath
+
+    def __call__(self, host):
+        with settings(host_string = host, warn_only = True ):
+            v = put(local_path = self.localpath, remote_path = self.remotepath)
+        return v
 
 
 class Readbuffer(StringIO.StringIO):
@@ -44,7 +52,7 @@ class PlanTask(object):
         self.stdout = Readbuffer()
         self.stderr = Readbuffer()
         self.retcode = []
-        self.commands = [Command(cmd, stdout = self.stdout, stderr = self.stderr) \
+        self.commands = [RemoteCommand(cmd, stdout = self.stdout, stderr = self.stderr) \
                 for cmd in commands]
         self.target = target
         self.level = level
@@ -52,7 +60,7 @@ class PlanTask(object):
     def __lt__(self, other):
         return self.level < other.level
 
-    def install(self):
+    def run(self):
         for c in self.commands:
             self.retcode.append(c.start(self.target))
          
@@ -98,9 +106,9 @@ def testCommand(cmd, target):
     #outfile= os.fdopen(w, 'w')
     outfile = Readbuffer()
     #outfile = StringIO()
-    login = Command('ls', stdout = None)
+    login = RemoteCommand('ls', stdout = None)
     login.start(target)
-    c = Command(cmd, stdout = outfile)
+    c = RemoteCommand(cmd, stdout = outfile)
     th = Thread(target = c.start, args = (target,))
     th.start()
     for i in range(10):
@@ -113,8 +121,7 @@ def testCommand(cmd, target):
 
 
 if __name__ == '__main__':
-    import time
-    t = testCommand('watch date',  'root@192.168.1.95')
-    for x in t:
-        print('----------: %s'%str(x))
-        time.sleep(1)
+    import sys, os
+    path = os.path.abspath(sys.argv[1])
+    f = FileTransfer(path, '/home/%s'%sys.argv[1])
+    print(f.start(sys.argv[2]))

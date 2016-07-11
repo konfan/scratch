@@ -10,13 +10,14 @@ class Pool(object):
         self.queue = Queue.PriorityQueue()
         self.threads = [threading.Thread(target = self._run) for i in range(self.poolsize)]
         for th in self.threads:
+            th.daemon = True
             th.start()
 
     def _run(self):
         while True:
             try:
                 plan = self.queue.get(timeout = 1)
-                plan.install()
+                plan.run()
                 self.queue.task_done()
             except Queue.Empty:
                 if not self.run:
@@ -38,7 +39,7 @@ class Tmppaln(object):
     def __lt__(self, other):
         return self.level < other.level
 
-    def install(self):
+    def run(self):
         print(self.level)
 
 
