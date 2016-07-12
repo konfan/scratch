@@ -1,3 +1,5 @@
+#-*- coding: utf-8
+#vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import threading
 import Queue
 
@@ -40,16 +42,25 @@ class Tmppaln(object):
         return self.level < other.level
 
     def run(self):
+        import time
         print(self.level)
+        time.sleep(10)
 
 
 def test():
     from random import randint
-    vl = [ Tmppaln(i) for i in [randint(0,100) for ii in range(100)]]
+    vl = [ Tmppaln(i) for i in range(20)]
     u = Pool()
     u.poolsize = 10
     [u.add(v) for v in vl]
     u.stop()
+
+
+def ddd():
+    t = ExecutePlan(seqs, hosts)
+    p = Pool()
+    for seq in t.sequences():
+        p.add(seq)
 
 
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,6 +18,8 @@ import os
 import types
 import logging
 import subprocess
+import termios
+import sys
 
 from exceptions import ExecuteRuntimeError
 from exceptions import NetworkError
@@ -26,6 +29,15 @@ from strings import mask_string
 
 block_fmt = ("\n============= %(title)s ==========\n%(content)s\n"
              "======== END OF %(title)s ========")
+
+def savetty():
+    return  termios.tcgetattr(sys.stdin), termios.tcgetattr(sys.stdout), termios.tcgetattr(sys.stderr)
+
+
+def loadtty(stdin, stdout, stderr):
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, stdin)
+    termios.tcsetattr(sys.stdout, termios.TCSADRAIN, stdout)
+    termios.tcsetattr(sys.stderr, termios.TCSADRAIN, stderr)
 
 
 def execute(cmd, workdir=None, can_fail=True, mask_list=None,

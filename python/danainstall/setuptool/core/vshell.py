@@ -33,7 +33,7 @@ class FileTransfer(object):
     def __call__(self, host):
         with settings(host_string = host, warn_only = True ):
             v = put(local_path = self.localpath, remote_path = self.remotepath)
-        return v
+        return v,v
 
 
 class Readbuffer(StringIO.StringIO):
