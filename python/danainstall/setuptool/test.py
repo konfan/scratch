@@ -21,16 +21,26 @@ class Tmppaln(object):
                 "%s:%s"%(t.target, t.output()[0]))
 
 
+class mod(object):
+    pass
+
+
 def seqtest():
+    import collections
     i,o,e = shell.savetty()
+    Pool.poolsize = 3
     p = Pool()
-    cmd = [{'name':'test', 'type':'script', 'command':'ls /root'}]
-    s = [Sequence('tier1', cmd, 'root@192.168.40.137') ,
-            Sequence('tier2', cmd, 'root@192.168.40.136')]
-    plan = ExecutePlan(s)
+    cmd = [{'name':'test', 'type':'script', 'command':'ls /root'},
+            {'name':'copyfile', 'type':'copy', 'source':'/root/get-pip.py', 'dest':'/root/get-pip.py'}]
+
+    a = SequenceTemplate('tier1', cmd)
+
+    plan = ExecutePlan('test', a, ['root@192.168.1.95', 'root@192.168.1.92'])
+    print(plan.sequences())
     for sl in plan.sequences():
         p.add(sl)
 
+    sys.stdin.readline()
     p.stop()
     shell.loadtty(i,o,e)
 
@@ -85,4 +95,6 @@ def test_old_main():
     
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(format = '%(asctime)s\t%(levelname)s\t%(module)s::%(name)s::%(message)s')
     seqtest()

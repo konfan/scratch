@@ -2,6 +2,7 @@
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 from fabric.api import settings, run, put
 import sys, StringIO
+import time
 
 
 def DefaultHook(runret):
@@ -32,6 +33,7 @@ class FileTransfer(object):
 
     def __call__(self, host):
         with settings(host_string = host, warn_only = True ):
+            time.sleep(2)
             v = put(local_path = self.localpath, remote_path = self.remotepath)
         return v,v
 

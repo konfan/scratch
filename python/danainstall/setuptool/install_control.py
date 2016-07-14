@@ -8,11 +8,11 @@ from utils.exceptions import *
 LOGFILE = 'install.log'
 
 
-def initlogger(debug):
+def initlogger(debug = False):
     try:
         logfile = LOGFILE
         lfhandle = logging.FileHandler(filename=logfile, mode='w')
-        fmts = '%(asctime)s\t%(levelname)s\t%(module)::%(name)s:: %message)s'
+        fmts = '%(asctime)s\t%(levelname)s\t%(module)s::%(name)s\t%(message)s'
         dfmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter(fmts, dfmt)
         lfhandle.setFormatter(fmt)
@@ -68,4 +68,7 @@ class InstallControl(object):
         
 
 
-
+if __name__ == '__main__':
+    import test
+    initlogger()
+    test.seqtest()

@@ -18,7 +18,8 @@ class Pool(object):
     def _run(self):
         while True:
             try:
-                plan = self.queue.get(timeout = 1)
+                #print('running pool.run')
+                plan = self.queue.get(timeout = 2)
                 plan.run()
                 self.queue.task_done()
             except Queue.Empty:
@@ -35,6 +36,7 @@ class Pool(object):
 
 
 class Tmppaln(object):
+    """ for test """
     def __init__(self, level = 0):
         self.level = level
 
@@ -56,12 +58,11 @@ def test():
     u.stop()
 
 
-def ddd():
+def test2():
     t = ExecutePlan(seqs, hosts)
     p = Pool()
     for seq in t.sequences():
         p.add(seq)
-
 
 
 if __name__ == '__main__':
