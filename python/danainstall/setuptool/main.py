@@ -10,12 +10,14 @@ import install_control
 
 def main():
     import sys
+    install_control.initlogger(True)
     conffile = "test.conf"
     
     lau = launcher.load(conffile)
-    print(lau)
 
     ctl = install_control.InstallControl(lau)
+    ctl.start()
+    ctl.wait()
 
     #server = http_server()
 
@@ -24,23 +26,11 @@ def main():
 
     #ctl.wait()
     #server.stop()
-    launcher.danainstall.setup()
-    http_server.start()
+    #launcher.danainstall.setup()
+    #http_server.start()
     ln = sys.stdin.readline()
     http_server.stop()
-
-
-def draft():
-    commandlist = plugin.makescript()
-    eg = ["ls", "cd ..", "./install"]
-
-    pl_common = ExecutePlan(commandlist, level = 0, target = [,])
-
-    pool = Pool()
-    for task in pl_common.tasks():
-        pool.add(task)
-
-    pl_common.status()
+    ctl.stop()
 
 
 

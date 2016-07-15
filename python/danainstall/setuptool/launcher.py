@@ -9,16 +9,18 @@ import sys
 import os
 import logging
 import traceback
+import collections
 
 
 config = ConfigParser.SafeConfigParser()
 
-modules = []
+modules = collections.OrderedDict()
 
 
 def loadplugins(sec):
     sys.path.append(basedefs.DIR_PLUGINS)
-    mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%sec)    
+
+    mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%sec)
     if not os.path.isfile(mod):
         raise InstallError("failed load plugin for %s"%sec)
 
@@ -28,32 +30,63 @@ def loadplugins(sec):
     return module
 
 
+def sortmodule(filelist):
+    """
+    return [(name, name_seq)]
+    """
+    import re
+    pattern = re.compile(r"(\S+)_(\d+)")
+    filtered = []
+    for f in filelist:
+        g = re.match(pattern, f)
+        if g:
+            filtered.append((g.groups()[0], g.groups()[1], f))
+
+    return map(lambda y:(y[0], y[2]), sorted(filtered, key = lambda x:x[1]))
+
+
+
 def load(conf):
-    """ load py files in plugins dir and in config file
+    """ 
+    list plugin modules
+    load config settings
     """
     global modules, config
 
     config.read(conf)
-    flist = [f[:-3] for f in os.listdir(basedefs.DIR_PLUGINS) if f[-3:] == ".py"]
-    sections = [s for s in config.sections() if s in flist]
-
-    for sec in sections:
+    flist = sortmodule([f[:-3] for f in os.listdir(basedefs.DIR_PLUGINS) if f[-3:] == ".py"])
+    
+    for sec, fname in flist:
         try:
-            modules.append(loadplugins(sec))
+            #modules.append(loadplugins(sec))
+            modules[sec] = loadplugins(fname)
         except Exception as e:
             logging.error(e)
             logging.error(traceback.format_exc())
             raise InstallError("failed when load plugins")
 
-    #generate executeplan
-    #print(globals().keys())
     return modules
 
-def makescript(module):
-    return modules[module].makescript(config)
+def buildplan(module):
+    return modules[module].buildplan(config)
+
 
 
 # generate engine plan
 
 # generate node command
 
+
+
+def test():
+    v = load('test.conf')
+    for n,v in v.items():
+        print(n, v.__file__)
+    plan = buildplan('common')
+    print(plan)
+
+
+
+if __name__ == '__main__':
+    test()
+    print(sortmodule(['ff_05', 'yy_08','cc_03', 'dd_03']))

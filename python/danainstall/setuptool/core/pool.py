@@ -16,7 +16,7 @@ class Pool(object):
             th.start()
 
     def _run(self):
-        while True:
+        while self.run:
             try:
                 #print('running pool.run')
                 plan = self.queue.get(timeout = 2)

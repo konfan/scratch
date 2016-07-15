@@ -62,6 +62,11 @@ class Sequence(object):
     def __lt__(self, other):
         return self.priority < other.priority
 
+    def __str__(self):
+        return str({'name':self.name,
+            'commands':[x.name for x in self.steps.values()]})
+
+
     def setTarget(self, target):
         self.target = target
 
@@ -85,10 +90,11 @@ class Sequence(object):
                 step.run(self.target)
                 #print('%s %d %s'%(name, step.retcode, step.msg))
 
+
 class PlanLogger(object):
     def __init__(self, logger, loglevel = logging.INFO):
         self.logger = logger
-        self.logger.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
         self.level = loglevel
 
     def write(self, buf):
@@ -116,6 +122,10 @@ class ExecutePlan(object):
 
     def stats(self):
         return [seq.stat() for seq in self.seqs]
+
+    def __str__(self):
+        import json
+        return json.dumps([(x.target, str(x)) for x in self.sequences()], indent = 2)
 
 
 
@@ -145,8 +155,7 @@ class SequenceTemplate(object):
 
 
 
+
 if __name__ == '__main__':
     cmd = [{'name':'test', 'type':'copy', 'source':'/opt','dest':'/opt'}]
     s = SequenceTemplate('test', cmd)
-    #s = Sequence('tier1', cmd, 'fff')
-    #print(s.stat())

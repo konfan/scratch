@@ -5,6 +5,7 @@ import sys, StringIO
 import re
 import select
 import time
+import logging
 
 
 def DefaultHook(runret):
@@ -43,6 +44,7 @@ class RemoteCommand(object):
         user, ip = parse_hoststring(host)
         self.ssh.connect(ip, username = user)
         channel = self.ssh.get_transport().open_session()
+        logging.debug('[%s]\t%s', host, self.cmd)
         channel.exec_command(self.cmd)
         inputs = [channel.makefile(), channel.makefile_stderr()]
         output = ""

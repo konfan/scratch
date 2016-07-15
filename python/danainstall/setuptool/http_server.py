@@ -10,6 +10,7 @@ import re
 import socket, ssl
 import datetime
 import traceback
+import cgi
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 
@@ -76,6 +77,19 @@ class Http_Handler(BaseHTTPRequestHandler):
         data = index_content.decode('utf-8').encode('utf-8')
         self.send_response('text/html', data)
 
+    def parse_POST(self):
+        mtype, pdict = cgi.parse_header(self.headers['content-type'])
+        if mtype == 'multipart/form-data':
+            params = cgi.parse_multipart(self.rfile, pdict)
+        elif mtype == 'application/x-www-form-urlencoded':
+            l = int(self.headers['content-length'])
+            params = cgi.parse_qs(self.rfile.read(l), keep_blank_values = 1)
+        else:
+            params = {}
+        return params
+
+
+
     def do_POST(self):
         refer = self.headers.getheader('Referer')
         if refer:
@@ -83,12 +97,16 @@ class Http_Handler(BaseHTTPRequestHandler):
             host = self.headers.getheader('host')
             if refer_loc != host:
                 # TODO: add log
-                #launcher_log.warn("web control ref:%s host:%s", refer_loc, host)
                 return
+
 
         url_path_list = self.path.split('/')
         # parse request and do work
+
         return
+
+
+
 
 
     def do_GET(self):
@@ -97,14 +115,12 @@ class Http_Handler(BaseHTTPRequestHandler):
             refer_loc = urlparse.urlparse(refer).netloc
             host = self.headers.getheader('host')
             if refer_loc != host:
-                #launcher_log.warn("web control ref:%s host:%s", refer_loc, host)
                 # logging
                 return
 
         # check for '..', which will leak file
         if re.search(r'(\.{2})', self.path) is not None:
             self.wfile.write(b'HTTP/1.1 404\r\n\r\n')
-            #launcher_log.warn('%s %s %s haking', self.address_string(), self.command, self.path )
             return
 
         url_path = urlparse.urlparse(self.path).path
@@ -159,11 +175,9 @@ def stop():
     if process == 0:
         return
 
-    #launcher_log.info("begin to exit web control")
     server.shutdown()
     server.server_close()
     process.join()
-    #launcher_log.info("launcher web control exited.")
     process = 0
 
 def main():

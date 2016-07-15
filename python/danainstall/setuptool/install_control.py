@@ -3,21 +3,30 @@
 import launcher
 import logging
 import traceback
+import core
 from utils.exceptions import *
+
 
 LOGFILE = 'install.log'
 
+controller = None
+
 
 def initlogger(debug = False):
+    import sys
+    logging.getLogger('paramiko').setLevel(logging.ERROR)
     try:
         logfile = LOGFILE
         lfhandle = logging.FileHandler(filename=logfile, mode='w')
+        stdhandle = logging.StreamHandler(sys.stdout)
         fmts = '%(asctime)s\t%(levelname)s\t%(module)s::%(name)s\t%(message)s'
         dfmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter(fmts, dfmt)
         lfhandle.setFormatter(fmt)
+        stdhandle.setFormatter(fmt)
         logging.root.handlers = []
         logging.root.addHandler(lfhandle)
+        logging.root.addHandler(stdhandle)
         if debug:
             logging.root.setLevel(logging.DEBUG)
         else:
@@ -29,29 +38,32 @@ def initlogger(debug = False):
     return logfile
 
 
-def start(launcherobj):
-    """
-    create a control object
 
-    launcherobj: laucher object create by launcher
-    """
-    pass
 
 
 
 class InstallControl(object):
 
     def __init__(self, modules):
-        #load modules 
-        self.modules = dict([(m.__name__, m) for m in modules])
-        self.manager = []
+        self.modules = modules
+        self.runner = core.Pool()
+        self.planlist = self.genExecPlan()
 
 
-    def startAll(self):
-        pass
+    def start(self):
+        import threading
+        def _start():
+            for plan in self.planlist:
+                map(self.runner.add, plan.sequences())
+        self.th = threading.Thread(target = _start)
+        self.th.daemon = True
+        self.th.start()
 
-    def addPlugin(self, plugin):
-        self.modules.update(plugin.__name__, plugin)
+    def stop(self):
+        self.runner.stop()
+
+    def wait(self):
+        self.runner.queue.join()
 
 
     def getAllPlugins(self):
@@ -59,16 +71,21 @@ class InstallControl(object):
 
     def genExecPlan(self):
         # module sequence
-        modulestree = []
         planlist = []
 
-        for v in modulestree:
-            planlist.append(v.make(launcher.config))
+        for v in self.modules.values():
+            planlist.append(v.buildplan(launcher.config))
+
+        return planlist
+
+    def status(self):
+        return [plan.stats() for plan in self.planlist]
+
 
         
 
 
 if __name__ == '__main__':
     import test
-    initlogger()
+    initlogger(True)
     test.seqtest()

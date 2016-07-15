@@ -61,10 +61,6 @@ FILE_INSTALLER_LOG = "setup.log"
 DIR_PROJECT_DIR = os.environ.get('INSTALLER_PROJECT_DIR', os.getcwd())
 DIR_PLUGINS = os.path.join(DIR_PROJECT_DIR, "plugins")
 
-EXEC_NSLOOKUP = "nslookup"
-EXEC_CHKCONFIG = "chkconfig"
-EXEC_SERVICE = "service"
-EXEC_IP = "ip"
+PACKAGE_DIR = os.path.join(DIR_PROJECT_DIR, "package")
 
-# space len size for color print
-SPACE_LEN = 70
+DANA_DIR = "/opt/dana"
