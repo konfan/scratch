@@ -5,16 +5,17 @@ import basedefs
 import os
 
 
-package_dest = "/opt/dana/tmpinstall"
+package_dest = basedefs.INSTALL_CACHE_DIR
+
 common_config = {
-        "hosts":""
+        "hosts":[]
         }
 common_package = 'common.tar.gz'
 
 
 def baseconfig(config):
     global common_config
-    l = config.get('common', 'nodelist')
+    l = config.get('common', 'nodes')
     common_config['hosts'] = l.split(',')
     common_config['user'] = config.get('common', 'installuser')
 
@@ -34,18 +35,13 @@ install_template = {
         "unpack":{
             "name":"unpack",
             "type":"script",
-            "command":"cd %s && tar zxf %s"
+            "command":"cd %s && tar zxf %s"%(package_dest, common_package)
             },
         "install":{
             "name":"install",
             "type":"script",
-            "command":"chmod a+x %s && %s"
+            "command":"chmod a+x {0} && {1}"
             },
-        "config":{
-            "name":"config",
-            "type":"script",
-            "command":r"sed -i %(name)s"
-            }
         }
 
 def maketemplate():
@@ -56,13 +52,13 @@ def maketemplate():
     commands.append(copy_file)
 
     unpack = install_template['unpack']
-    unpack['command'] = unpack['command']%(package_dest, common_package)
     commands.append(unpack)
 
     install = install_template['install']
     target = os.path.join(package_dest,'common', 'install.sh')
-    install['command'] = install['command']%(target, target)
+    install['command'] = install['command'].format(target, target)
     commands.append(install)
+
 
     return core.SequenceTemplate('common', commands)
 

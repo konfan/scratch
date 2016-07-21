@@ -108,13 +108,14 @@ class PlanLogger(object):
 
 
 class ExecutePlan(object):
-    def __init__(self, name, seqtemplate, targets = []):
+    def __init__(self, name, seqtemplate, targets = [], priority = 0):
         self.seqs = []
         self.name = name
+        self.priority = priority
         for t in targets:
-            logger = PlanLogger(logging.getLogger('%s:%s'%(name, t)), logging.DEBUG)
+            logger = PlanLogger(logging.getLogger('%s:%s'%(name, t)), logging.INFO)
             self.seqs.append(Sequence(seqtemplate.name, seqtemplate.commands, t,
-                stdout = logger, stderr = logger))
+                priority = self.priority, stdout = logger, stderr = logger))
 
     def sequences(self):
         return self.seqs
@@ -126,6 +127,8 @@ class ExecutePlan(object):
     def __str__(self):
         import json
         return json.dumps([(x.target, str(x)) for x in self.sequences()], indent = 2)
+
+        
 
 
 

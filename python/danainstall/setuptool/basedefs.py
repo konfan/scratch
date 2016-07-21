@@ -64,3 +64,6 @@ DIR_PLUGINS = os.path.join(DIR_PROJECT_DIR, "plugins")
 PACKAGE_DIR = os.path.join(DIR_PROJECT_DIR, "package")
 
 DANA_DIR = "/opt/dana"
+
+INSTALL_CACHE_DIR = "/opt/dana/installtmp"
+

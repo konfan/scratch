@@ -90,7 +90,29 @@ class Http_Handler(BaseHTTPRequestHandler):
 
 
 
+    def do_install(self, params, paths):
+        print(params, paths)
+        if paths[0] == 'checkip':
+            ip = params['ip'][0]
+            print(ip)
+            data = ip.decode('utf-8').encode('utf-8')
+            self.send_response("", data)
+
+        elif paths[0] == 'checkuser':
+            pass
+
+    def do_system(self ,params, paths):
+        import json
+        p = {'name':"fanfei", "comp":"datatom"}
+        self.send_response("", json.dumps(p))
+
+
     def do_POST(self):
+        api_map = {
+                "install":self.do_install,
+                "system":self.do_system
+                }
+
         refer = self.headers.getheader('Referer')
         if refer:
             refer_loc = urlparse.urlparse(refer).netloc
@@ -100,11 +122,18 @@ class Http_Handler(BaseHTTPRequestHandler):
                 return
 
 
+        params = self.parse_POST()
+        print(params)
         url_path_list = self.path.split('/')
+        print(url_path_list)
         # parse request and do work
 
-        return
+        if api_map.has_key(url_path_list[1]):
+            api_map[url_path_list[1]](params, url_path_list[2:])
 
+        else:
+            self.send_not_found()
+        return
 
 
 
@@ -158,7 +187,7 @@ def start():
     global process, server
     # should use config.yaml to bing ip
     allow_remote = True
-    host_port = 80
+    host_port = 8999
 
     if allow_remote:
         host_addr = "0.0.0.0"

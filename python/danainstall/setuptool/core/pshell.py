@@ -2,6 +2,7 @@
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import paramiko
 import sys, StringIO
+import os
 import re
 import select
 import time
@@ -34,7 +35,6 @@ class RemoteCommand(object):
 
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        #self.cmd += ';$echo ?'
 
     def __call__(self, host):
         """
@@ -42,9 +42,9 @@ class RemoteCommand(object):
         return retcode, output, err
         """
         user, ip = parse_hoststring(host)
-        self.ssh.connect(ip, username = user)
+        self.ssh.connect(ip, username = user, timeout = 3)
         channel = self.ssh.get_transport().open_session()
-        logging.debug('[%s]\t%s', host, self.cmd)
+        logging.info('[%s]\t%s', host, self.cmd)
         channel.exec_command(self.cmd)
         inputs = [channel.makefile(), channel.makefile_stderr()]
         output = ""
@@ -83,7 +83,9 @@ class FileTransfer(object):
 
     def __call__(self, host):
         user, ip = parse_hoststring(host)
-        self.ssh.connect(ip, username = user)
+        if not os.path.isfile(self.localpath):
+            raise RuntimeError('%s is no a file'%self.localpath)
+        self.ssh.connect(ip, username = user, timeout = 3)
         try:
             sftp = self.ssh.open_sftp()
             self.stdout.write('[local]%s -> [%s]%s'%(self.localpath, ip, self.remotepath))
@@ -98,9 +100,7 @@ class FileTransfer(object):
 def test():
     c = RemoteCommand('yum')
     o,e = c('root@192.168.40.137')
-    print ('*********************************************')
     print o
-    print ('---------------------------------------------')
     print e
 
 

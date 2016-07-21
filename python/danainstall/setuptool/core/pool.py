@@ -2,6 +2,7 @@
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import threading
 import Queue
+import logging
 
 
 
@@ -18,13 +19,20 @@ class Pool(object):
     def _run(self):
         while self.run:
             try:
-                #print('running pool.run')
                 plan = self.queue.get(timeout = 2)
-                plan.run()
-                self.queue.task_done()
             except Queue.Empty:
-                if not self.run:
+                if self.run:
+                    continue
+                else:
                     return
+            try:
+                plan.run()
+            except Exception as e:
+                logging.getLogger("pool").error(e)
+                return
+            finally:
+                self.queue.task_done()
+
 
 
     def add(self, execplan):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -61,3 +62,25 @@ def split_hosts(hosts_string):
         if shost:
             hosts.add(shost)
     return hosts
+
+
+def makescript(name, command):
+    return {
+            'name':name,
+            'type':'script',
+            'command':command
+            }
+
+def makecopy(name, src, dst):
+    return {
+            'name':name,
+            'type':'copy',
+            'source':src,
+            'dest':dst
+            }
+
+def sed_set_opt(label, value, filo):
+    return r'sed -i "s/\(^\s*%(label)s\s*=\).*/\1 %(value)s/" %(file)s'%{
+            'label':label, 'value':value, 'file':filo}
+
+

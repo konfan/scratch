@@ -41,16 +41,18 @@ def initlogger(debug = False):
 
 
 
-
 class InstallControl(object):
 
     def __init__(self, modules):
         self.modules = modules
         self.runner = core.Pool()
         self.planlist = self.genExecPlan()
+        print(self.planlist)
+
 
 
     def start(self):
+        #todo schedule by priority
         import threading
         def _start():
             for plan in self.planlist:
@@ -74,7 +76,8 @@ class InstallControl(object):
         planlist = []
 
         for v in self.modules.values():
-            planlist.append(v.buildplan(launcher.config))
+            plan = v.buildplan(launcher.config)
+            planlist.extend(v.buildplan(launcher.config))
 
         return planlist
 

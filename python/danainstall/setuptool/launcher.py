@@ -85,8 +85,21 @@ def test():
     plan = buildplan('common')
     print(plan)
 
+def testplugins(pfile):
+    load('test.conf')
+    sys.path.append(basedefs.DIR_PLUGINS)
+    #mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%pfile)
+    module = __import__(pfile)
+    module.parseconfig(config)
+
+    print(module.common_plan(config))
 
 
 if __name__ == '__main__':
-    test()
-    print(sortmodule(['ff_05', 'yy_08','cc_03', 'dd_03']))
+    #test()
+    #print(sortmodule(['ff_05', 'yy_08','cc_03', 'dd_03']))
+    testplugins('danacenter')
+    from utils import network
+    ip = network.get_localhost_ip()
+    print(ip)
+
