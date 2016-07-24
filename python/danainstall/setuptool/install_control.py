@@ -42,21 +42,33 @@ def initlogger(debug = False):
 
 
 class InstallControl(object):
-
     def __init__(self, modules):
         self.modules = modules
         self.runner = core.Pool()
         self.planlist = self.genExecPlan()
-        print(self.planlist)
-
 
 
     def start(self):
         #todo schedule by priority
         import threading
         def _start():
+            level_plan = {}
             for plan in self.planlist:
-                map(self.runner.add, plan.sequences())
+                if not level_plan.has_key(plan.priority):
+                    level_plan[plan.priority] = [plan]
+                else:
+                    level_plan[plan.priority].append(plan)
+
+            for l in sorted(level_plan.keys()):
+                for p in level_plan[l]:
+                    #map(self.runner.add, p.sequences())
+                    for seq in p.sequences():
+                        #print('add seq %s %s'%(seq.name, seq.target))
+                        self.runner.add(seq)
+                #print('waiting')
+                self.wait()
+                #print('waiting done')
+
         self.th = threading.Thread(target = _start)
         self.th.daemon = True
         self.th.start()
@@ -75,9 +87,10 @@ class InstallControl(object):
         # module sequence
         planlist = []
 
-        for v in self.modules.values():
-            plan = v.buildplan(launcher.config)
-            planlist.extend(v.buildplan(launcher.config))
+        for v in self.modules.keys():
+            #plan = v.buildplan(launcher.config)
+            plan = launcher.buildplan(v)
+            planlist.extend(plan)
 
         return planlist
 

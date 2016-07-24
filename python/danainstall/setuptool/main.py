@@ -3,7 +3,6 @@
 import http_server
 import launcher
 import install_control
-from optparse import OptionGroup
 from optparse import OptionParser
 
 
@@ -46,7 +45,6 @@ def main():
     install_control.initlogger(options.debug)
     conffile = options.config
     
-    print(conffile)
     lau = launcher.load(conffile)
 
     ctl = install_control.InstallControl(lau)

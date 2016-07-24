@@ -51,7 +51,12 @@ class RemoteCommand(object):
         err = ""
         while True:
             if channel.exit_status_ready():
-                print('exit code is %d'%channel.recv_exit_status())
+                #print('exit code is %d'%channel.recv_exit_status())
+                if channel.recv_exit_status() == 0:
+                    logging.info('[%s]\t%s Succeeded', host, self.cmd)
+                    #logging.info("Succeed")
+                else:
+                    logging.error('[%s]\t%s Failed, return %d', host, self.cmd, channel.recv_exit_status())
                 break
             rl, wl, xl = select.select([channel], [], [])
             for r in rl:
@@ -91,8 +96,10 @@ class FileTransfer(object):
             self.stdout.write('[local]%s -> [%s]%s'%(self.localpath, ip, self.remotepath))
             time.sleep(2)
             trans = sftp.put(self.localpath, self.remotepath, confirm = True)
+            logging.info("Succeed")
             return trans.st_size, "", ""
         except Exception as e:
+            logging.error("Failed")
             self.stderr.write(e)
             return -1,"",""
 

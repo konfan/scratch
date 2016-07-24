@@ -26,7 +26,32 @@ from shell import execute
 from shell import ScriptRunner
 
 
-def get_localhost_ip():
+def remote_get_host_ip(beacon):
+    s = "python -c \"import socket;"
+    s += "s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);"
+    s += "s.connect((('%s'), 0));"%beacon
+    s += "print(s.getsockname()[0])\""
+    return s
+
+
+def get_localhost_ip(beacon = None):
+    if not beacon:
+        return _get_innet_ip()
+
+    target = (beacon)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((target, 0))
+        loc_ip = s.getsockname()[0]
+        return loc_ip
+    except Exception as e:
+        raise NetworkError('Local IP address discovery failed: %s'%e)
+    finally:
+        s.close()
+    
+
+
+def _get_innet_ip():
     """
     Returns IP address of localhost.
     """
@@ -54,6 +79,8 @@ def get_localhost_ip():
             continue
         else:
             return loc_ip
+        finally:
+            s.close()
     raise NetworkError('Local IP address discovery failed. Please set '
                        'nameserver correctly.')
 

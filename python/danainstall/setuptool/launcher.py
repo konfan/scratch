@@ -7,6 +7,7 @@ import ConfigParser
 import basedefs
 import sys
 import os
+import re
 import logging
 import traceback
 import collections
@@ -16,30 +17,33 @@ config = ConfigParser.SafeConfigParser()
 
 modules = collections.OrderedDict()
 
+pattern = re.compile(r"(\S+)_(\d+)")
 
-def loadplugins(sec):
+
+def loadplugins(fname):
     sys.path.append(basedefs.DIR_PLUGINS)
 
-    mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%sec)
+    mod = os.path.join(basedefs.DIR_PLUGINS, "%s.py"%fname)
     if not os.path.isfile(mod):
-        raise InstallError("failed load plugin for %s"%sec)
+        raise InstallError("failed load plugin for %s"%fname)
 
-    module = __import__(sec)
+    module = __import__(fname)
     module.__file__ = mod
-    globals()[sec] = module
+    module.__level__ = re.match(pattern, fname).groups()[1]
+    globals()[fname] = module
     return module
+
 
 
 def sortmodule(filelist):
     """
     return [(name, name_seq)]
     """
-    import re
-    pattern = re.compile(r"(\S+)_(\d+)")
     filtered = []
     for f in filelist:
         g = re.match(pattern, f)
         if g:
+            # plugin, num, plugin_num
             filtered.append((g.groups()[0], g.groups()[1], f))
 
     return map(lambda y:(y[0], y[2]), sorted(filtered, key = lambda x:x[1]))
@@ -68,7 +72,12 @@ def load(conf):
     return modules
 
 def buildplan(module):
-    return modules[module].buildplan(config)
+    plans = modules[module].buildplan(config)
+    for plan in plans:
+        if plan.priority == plan.DEFAULT_PRIORITY:
+            plan.priority = modules[module].__level__
+
+    return plans
 
 
 
@@ -92,14 +101,14 @@ def testplugins(pfile):
     module = __import__(pfile)
     module.parseconfig(config)
 
-    print(module.common_plan(config))
+    for cmds in module.buildplan(config):
+        print('****************************************************')
+        for cmd in cmds:
+            print cmd
 
 
 if __name__ == '__main__':
     #test()
     #print(sortmodule(['ff_05', 'yy_08','cc_03', 'dd_03']))
     testplugins('danacenter')
-    from utils import network
-    ip = network.get_localhost_ip()
-    print(ip)
 

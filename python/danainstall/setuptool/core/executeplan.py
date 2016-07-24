@@ -85,7 +85,7 @@ class Sequence(object):
             raise RuntimeError("invalid target")
 
         for name, step in self.steps.items():
-            print('running %s'%self.name)
+            #print('running %s'%self.name)
             if step.state == Step.PREPARED:
                 step.run(self.target)
                 #print('%s %d %s'%(name, step.retcode, step.msg))
@@ -108,10 +108,12 @@ class PlanLogger(object):
 
 
 class ExecutePlan(object):
-    def __init__(self, name, seqtemplate, targets = [], priority = 0):
+    DEFAULT_PRIORITY = 99999
+    def __init__(self, name, seqtemplate, targets = [], priority = DEFAULT_PRIORITY):
         self.seqs = []
         self.name = name
         self.priority = priority
+        self.targets = targets
         for t in targets:
             logger = PlanLogger(logging.getLogger('%s:%s'%(name, t)), logging.INFO)
             self.seqs.append(Sequence(seqtemplate.name, seqtemplate.commands, t,

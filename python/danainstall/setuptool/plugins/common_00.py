@@ -73,4 +73,3 @@ def buildplan(config):
     seqtemplate = maketemplate()
     hosts = ['%s@%s'%(common_config['user'], x.strip()) for x in common_config['hosts']]
     return [core.ExecutePlan('common', seqtemplate, hosts)]
-

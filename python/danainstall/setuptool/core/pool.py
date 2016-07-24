@@ -3,6 +3,7 @@
 import threading
 import Queue
 import logging
+import traceback
 
 
 
@@ -19,20 +20,22 @@ class Pool(object):
     def _run(self):
         while self.run:
             try:
-                plan = self.queue.get(timeout = 2)
+                seq = self.queue.get(timeout = 2)
             except Queue.Empty:
                 if self.run:
                     continue
                 else:
                     return
             try:
-                plan.run()
+                #print("executeing %s %s %s"%(seq.name, seq.target, seq))
+                seq.run()
+                #print("seq %s %s %s done"%(seq.name, seq.target, seq))
             except Exception as e:
                 logging.getLogger("pool").error(e)
+                logging.getLogger('pool').error(traceback.format_exc())
                 return
             finally:
                 self.queue.task_done()
-
 
 
     def add(self, execplan):
