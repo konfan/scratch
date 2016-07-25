@@ -20,6 +20,30 @@ def baseconfig(config):
     common_config['user'] = config.get('common', 'installuser')
 
 
+
+flimit_tuning = """*    soft    nofile  655360
+*   hard    nofile  655360
+*   soft    nproc   655360
+*   hard    nproc   655360
+*   soft    stack   unlimited
+*   hard    stack   unlimited
+*   soft    memlock 250000000
+*   hard    memlock 250000000
+"""
+
+
+
+
+tcp_tuning = """net.ipv4.tcp_syn_retries=2
+net.ipv4.tcp_keepalive_time=600
+net.ipv4.tcp_keepalive_probes=5
+net.ipv4.tcp_fin_timeout=30
+net.ipv4.tcp_max_syn_backlog=4096
+net.ipv4.tcp_syncookies=1
+"""
+
+
+
 install_template = {
         "prepare":{
             "name":"prepare",
@@ -42,7 +66,11 @@ install_template = {
             "type":"script",
             "command":"chmod a+x {0} && {1}"
             },
+
+        "tuning":{}
         }
+
+
 
 def maketemplate():
     commands = [install_template['prepare']]
@@ -59,11 +87,11 @@ def maketemplate():
     install['command'] = install['command'].format(target, target)
     commands.append(install)
 
+    commands.append(makescript("tuning limit", "echo -e \"%s\" > /etc/sysctl.d/dana_limit_tuning"%flimit_tuning))
+    commands.append(makescript("tuning network", "echo -e \"%s\" > /etc/sysctl.d/dana_tcp_tuning"%tcp_tuning))
+    commands.append(makescript("tuning", "sysctl --system"))
 
     return core.SequenceTemplate('common', commands)
-
-def makecentertemplate():
-    pass
 
 
 
