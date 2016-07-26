@@ -29,7 +29,7 @@ def loadplugins(fname):
 
     module = __import__(fname)
     module.__file__ = mod
-    module.__level__ = re.match(pattern, fname).groups()[1]
+    module.__level__ = int(re.match(pattern, fname).groups()[1])
     globals()[fname] = module
     return module
 
@@ -110,5 +110,5 @@ def testplugins(pfile):
 if __name__ == '__main__':
     #test()
     #print(sortmodule(['ff_05', 'yy_08','cc_03', 'dd_03']))
-    testplugins('danacenter')
+    testplugins('danacenter_01')
 

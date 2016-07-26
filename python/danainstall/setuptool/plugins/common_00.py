@@ -3,6 +3,7 @@
 import core
 import basedefs
 import os
+from utils.shortcuts import *
 
 
 package_dest = basedefs.INSTALL_CACHE_DIR
@@ -21,14 +22,10 @@ def baseconfig(config):
 
 
 
-flimit_tuning = """*    soft    nofile  655360
-*   hard    nofile  655360
-*   soft    nproc   655360
-*   hard    nproc   655360
-*   soft    stack   unlimited
-*   hard    stack   unlimited
-*   soft    memlock 250000000
-*   hard    memlock 250000000
+flimit_tuning = """*    soft    nofile  90000
+*   hard    nofile  1000000
+*   soft    nproc   65535
+*   hard    nproc   65535
 """
 
 
@@ -64,7 +61,7 @@ install_template = {
         "install":{
             "name":"install",
             "type":"script",
-            "command":"chmod a+x {0} && {1}"
+            "command":"chmod a+x {0} && cd {1} && ./install.sh"
             },
 
         "tuning":{}
@@ -84,11 +81,11 @@ def maketemplate():
 
     install = install_template['install']
     target = os.path.join(package_dest,'common', 'install.sh')
-    install['command'] = install['command'].format(target, target)
+    install['command'] = install['command'].format(target, os.path.join(package_dest, 'common'))
     commands.append(install)
 
-    commands.append(makescript("tuning limit", "echo -e \"%s\" > /etc/sysctl.d/dana_limit_tuning"%flimit_tuning))
-    commands.append(makescript("tuning network", "echo -e \"%s\" > /etc/sysctl.d/dana_tcp_tuning"%tcp_tuning))
+    commands.append(makescript("tuning limit", "echo -e \"%s\" > /etc/security/limits.d/10-dana_limit_tuning.conf"%flimit_tuning))
+    commands.append(makescript("tuning network", "echo -e \"%s\" > /etc/sysctl.d/dana_tcp_tuning.conf"%tcp_tuning))
     commands.append(makescript("tuning", "sysctl --system"))
 
     return core.SequenceTemplate('common', commands)
