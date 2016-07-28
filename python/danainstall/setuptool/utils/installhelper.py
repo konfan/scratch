@@ -35,7 +35,7 @@ def get_nodetype(ip):
             4:lambda x: ismanage(x) and typecheck[1](x),
             5:lambda x: ismanage(x) and typecheck[2](x)
             }
-    for typo, func in typecheck.items():
+    for typo, func in sorted(typecheck.items(), reverse=True):
         if func(ip):
             return typo
 

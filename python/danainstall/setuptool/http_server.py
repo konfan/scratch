@@ -1,4 +1,5 @@
 #-*- coding: utf-8
+
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import SocketServer
 import threading
@@ -11,16 +12,30 @@ import socket, ssl
 import datetime
 import traceback
 import cgi
+import json
 
 from BaseHTTPServer import BaseHTTPRequestHandler
+from json import *
+from utils import shell
 
 NetWorkIOError = (socket.error, ssl.SSLError, OSError)
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 
+ipadder = ['192.168.1.232', '192.168.1.233', '192.168.1.234', '192.168.1.235', '192.168.1.236', '192.168.1.237', '192.168.1.238', '192.168.1.239', '192.168.1.240']
+
+controller = None
+
+
+def setctl(installctl):
+    global controller 
+    controller = installctl
+
+
+
 class LocalServer(SocketServer.ThreadingTCPServer):
     allow_reuse_address = True
-
+    global ipadder
     def close_request(self, request):
         try:
             request.close()
@@ -42,6 +57,8 @@ class LocalServer(SocketServer.ThreadingTCPServer):
             del etype, value
             SocketServer.ThreadingTCPServer.handle_error(self, *args)
 
+
+
 class Http_Handler(BaseHTTPRequestHandler):
     deploy_proc = None
     
@@ -51,7 +68,6 @@ class Http_Handler(BaseHTTPRequestHandler):
     def send_response(self, mimetype, data):
         self.wfile.write(('HTTP/1.1 200\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: %s\r\nContent-Length: %s\r\n\r\n' % (mimetype, len(data))).encode())
         self.wfile.write(data)
-
 
     def send_not_found(self):
         self.wfile.write(b'HTTP/1.1 404\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n404 Not Found')
@@ -70,7 +86,7 @@ class Http_Handler(BaseHTTPRequestHandler):
         req = urlparse.urlparse(self.path).query
         reqs = urlparse.parse_qs(req, keep_blank_values=True)
 
-        index_path = os.path.join(current_path, 'web_ui', "index.html")
+        index_path = os.path.join(current_path, 'install_ui', "index.html")
         with open(index_path, "r") as f:
             index_content = f.read()
 
@@ -78,40 +94,89 @@ class Http_Handler(BaseHTTPRequestHandler):
         self.send_response('text/html', data)
 
     def parse_POST(self):
-        mtype, pdict = cgi.parse_header(self.headers['content-type'])
-        if mtype == 'multipart/form-data':
-            params = cgi.parse_multipart(self.rfile, pdict)
-        elif mtype == 'application/x-www-form-urlencoded':
-            l = int(self.headers['content-length'])
-            params = cgi.parse_qs(self.rfile.read(l), keep_blank_values = 1)
-        else:
-            params = {}
+        try:
+            mtype, pdict = cgi.parse_header(self.headers['content-type'])
+            if mtype == 'multipart/form-data':
+                params = cgi.parse_multipart(self.rfile, pdict)
+            elif mtype == 'application/x-www-form-urlencoded':
+                l = int(self.headers['content-length'])
+                params = cgi.parse_qs(self.rfile.read(l), keep_blank_values = 1)
+            elif mtype == 'application/json':         
+                l = int(self.headers['content-length'])
+                data = self.rfile.read(l)
+                params = json.loads(data)
+            else:
+                params = {}
+        except KeyError:
+            return {}
         return params
 
 
 
-    def do_install(self, params, paths):
-        print(params, paths)
-        if paths[0] == 'checkip':
-            ip = params['ip'][0]
-            print(ip)
-            data = ip.decode('utf-8').encode('utf-8')
-            self.send_response("", data)
+    def checkip(self, params):
+        host = params['ip'][0]
+        code, out = shell.execute("ping -q -W 1 -c 1 %s"%host,
+                can_fail=False, use_shell=True, log=False)
+        if code != 0:
+            self.send_response("application/json", json.dumps({'code':500, "msg":"host unreachable"}))
+            return
 
-        elif paths[0] == 'checkuser':
-            pass
-
-    def do_system(self ,params, paths):
-        import json
-        p = {'name':"fanfei", "comp":"datatom"}
-        self.send_response("", json.dumps(p))
+        # test ssh
+        self.send_response('application/json', json.dumps({'code':200, 'host':host}))
 
 
+    def login(self, params):
+        host = params['ip'][0]
+        user = params['username'][0]
+        pwd = params['password'][0]
+
+        self.send_response('application/json', json.dumps({'code':200, 'ret':[host, user, pwd]}))
+
+
+    def progress(self, params):
+        pass
+
+    def install(self, params):
+        master = [ s.strip() for s in params['master'][0].split(';')]
+        manage = [ s.strip() for s in params['zoo'][0].split(';')]
+        other = [ s.strip() for s in params['other'][0].split(';')]
+        engine = [ s.strip() for s in params['engine'][0].split(';')]
+        user = params['uname'][0]
+        pwd = params['pwd'][0]
+        clustername = params['clusterName'][0]
+
+        self.send_response('application/json', json.dumps({'code':200, 'ret':[master, manage, other, engine, user, pwd, clustername]}))
+
+       
+ 
     def do_POST(self):
         api_map = {
-                "install":self.do_install,
-                "system":self.do_system
+                "install":{
+                    "check":self.checkip,
+                    "login":self.login,
+                    "progress":self.progress,
+                    "doInstall":self.install,
+                    }
                 }
+
+        def seekapi(urlpath):
+            while urlpath and urlpath[-1] == '/': 
+                urlpath = urlpath[:-1]
+            url_path_list = urlpath.split('/')[1:]
+            url_path_list.append('')
+            directory = api_map
+            for k in url_path_list:
+                try:
+                    obj = directory[k]
+                    if callable(obj):
+                        return obj
+                    else:
+                        directory = obj
+                except (KeyError, AttributeError) as e:
+                    return self.send_not_found
+            assert(False)
+
+
 
         refer = self.headers.getheader('Referer')
         if refer:
@@ -120,24 +185,16 @@ class Http_Handler(BaseHTTPRequestHandler):
             if refer_loc != host:
                 # TODO: add log
                 return
-
-
-        params = self.parse_POST()
-        print(params)
+        params = self.parse_POST()      
         url_path_list = self.path.split('/')
-        print(url_path_list)
-        # parse request and do work
-
-        if api_map.has_key(url_path_list[1]):
-            api_map[url_path_list[1]](params, url_path_list[2:])
-
-        else:
-            self.send_not_found()
-        return
+        f = seekapi(self.path)
+        f(params)
+        return 
 
 
 
 
+    #接受get请求
     def do_GET(self):
         refer = self.headers.getheader('Referer')
         if refer:
@@ -153,13 +210,11 @@ class Http_Handler(BaseHTTPRequestHandler):
             return
 
         url_path = urlparse.urlparse(self.path).path
-        print(self.path)
-        print(url_path)
         if url_path == '/':
             return self.req_index_handler()
 
         else:
-            file_path = os.path.join(current_path, 'web_ui' + url_path)
+            file_path = os.path.join(current_path, 'install_ui' + url_path)
 
             if os.path.isfile(file_path):
                 if file_path.endswith('.js'):

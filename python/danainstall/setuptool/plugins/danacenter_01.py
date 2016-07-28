@@ -195,7 +195,7 @@ def master_commands(config):
 
     # zookeeper host
     zhosts = ','.join(["%s:10301"%zk for zk in dana_config['managehosts']])
-    cfg_command = sed_set_opt('zook_host', zhosts, master_conf_file)
+    cfg_command = sed_set_opt('zoo_host', zhosts, master_conf_file)
     commands.append(makescript('set zookeeper host', cfg_command))
 
     # eagles host
@@ -204,7 +204,7 @@ def master_commands(config):
     commands.append(makescript('set eagles host', cfg_command))
 
     # master ip
-    cfg_command = sed_set_opt('master', dana_config['centerhosts'][0], common_conf_file)
+    cfg_command = sed_set_opt('master', dana_config['centerhosts'][0], master_conf_file)
     commands.append(makescript('set master ip', cfg_command))
 
     # local host
