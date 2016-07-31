@@ -16,6 +16,10 @@
 import grp
 import os
 import pwd
+import paramiko
+import subprocess
+import socket
+from StringIO import StringIO
 
 
 def host_iter(config):
@@ -83,4 +87,84 @@ def sed_set_opt(label, value, filo):
     return r'sed -i "s/\(^\s*%(label)s\s*=\).*/\1 %(value)s/" %(file)s'%{
             'label':label, 'value':value, 'file':filo}
 
+SSH_OK = 1
+SSH_NOAUTH = 2
+SSH_FAILED = 3
+
+def testssh(host):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(host, username='root', timeout=2 )
+        return SSH_OK 
+    except paramiko.ssh_exception.AuthenticationException:
+        return SSH_NOAUTH
+    except (paramiko.ssh_exception.SSHException, 
+            paramiko.ssh_exception.NoValidConnectionsError,
+            socket.timeout):
+        return SSH_FAILED
+    finally:
+        client.close()
+
+
+def ssh_key_gen(keyfile=os.path.expanduser("~/.ssh/id_rsa")):
+    cmd = "/usr/bin/ssh-keygen -q -f %s -t rsa -N"%keyfile
+    args = cmd.split()
+    args.append("")
+    
+    p = subprocess.Popen(args, stdout = subprocess.PIPE, stdin = subprocess.PIPE, 
+            close_fds = True, bufsize=0)
+    p.communicate()
+    return keyfile, '%s.pub'%keyfile
+
+
+def ssh_key_copy(pubkey, host, user, password):
+    with open(pubkey,'r') as f:
+        pkey = f.read()
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(host, username='root', password = password, timeout=2)
+    i,o,e = client.exec_command("mkdir -p ~/.ssh && chmod 700 ~/.ssh")
+    #print('mkdir :' + o.read())
+    #print('mkdir e:' + e.read())
+    o.read(), e.read()
+    cmd = "echo \"%s\" >> ~/.ssh/authorized_keys"%pkey
+    #print(cmd)
+    i,o,e = client.exec_command(cmd)
+    o.read(), e.read()
+
+
+def baseconfigfile(fpath):
+    basefile = """
+[common]
+clustername = myname
+installuser = root
+nodes = 192.168.40.130
+#nodes = 192.168.40.137, 192.168.40.138
+adminpwd = 999999
+
+
+
+[danacenter]
+centernodes = 192.168.40.130
+managenodes = 192.168.40.130
+
+
+[eagles]
+hosts = 192.168.40.130
+
+
+[crab]
+hostlist = 192.168.3.98
+
+
+[stork]
+hostlist = 192.168.3.22
+
+
+[leopard]
+hostlist = 192.168.1.95
+"""
+    with open(fpath, 'w') as f:
+        f.write(basefile)
 

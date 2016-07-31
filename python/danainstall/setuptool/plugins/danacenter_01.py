@@ -20,6 +20,7 @@ master_conf_file = "/etc/dt.d/yak_common.conf"
 
 manage_package = "manage.tar.gz"
 manage_conf_file = "/opt/dana/zookeeper/conf/zoo.cfg"
+manage_id_file = "/opt/dana/zookeeper/data/myid"
 
 
 
@@ -66,54 +67,6 @@ def parseconfig(config):
 
 
 
-common_template = {
-        'prepare':makescript("prepare", "mkdir -p %s"%package_dest),
-
-        'copy files':makecopy("copy files", os.path.join(basedefs.PACKAGE_DIR,'danacenter', common_package),
-            os.path.join(package_dest, common_package)),
-        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, common_package)),
-
-        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh"),
-        }
-
-
-master_template = {
-        'prepare':makescript("prepare", "mkdir -p %s"%package_dest),
-
-        'copy files':makecopy("copy files", os.path.join(basedefs.PACKAGE_DIR,'danacenter', master_package),
-            os.path.join(package_dest, master_package)),
-        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, master_package)),
-
-        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh"),
-        }
-
-
-manage_template = {
-        'prepare':makescript("prepare", "mkdir -p %s"%package_dest),
-
-        'copy files':makecopy("copy files", os.path.join(basedefs.PACKAGE_DIR, 'danacenter', manage_package),
-            os.path.join(package_dest, manage_package)),
-        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, manage_package)),
-
-        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh")
-        }
-
-def get_nodetype(ip):
-    iscenter = lambda i: i in dana_config['centerhosts']
-    ismanage = lambda i: i in dana_config['managehosts']
-    typecheck = {
-            '1':lambda x: iscenter(x) and x == dana_config['centerhosts'][0],
-            '2':lambda x: iscenter(x) and x != dana_config['centerhosts'][0],
-            '3':lambda x: ismanage(x) and not typecheck[1](x) and not typecheck[2](x),
-            '4':lambda x: ismanage(x) and typecheck[1](x),
-            '5':lambda x: ismanage(x) and typecheck[2](x)
-            }
-    for typo, func in typecheck.items():
-        if func(ip):
-            return typo
-
-    return '6' #not 1~5
-
 
 def tooloptions():
     m = ','.join(dana_config['managehosts'])
@@ -124,19 +77,47 @@ def tooloptions():
 
 
 
-def common_commands(config):
-    commands = [common_template['prepare'],common_template['copy files'], common_template['unpack']]
+
+prepare_template = {
+        'prepare':makescript("prepare", "mkdir -p %s"%package_dest),
+        'copy tool':makecopy('install_tool', 
+            os.path.join(basedefs.DIR_PROJECT_DIR, 'utils', 'installhelper.py'), 
+            installtool),
+        #'sysinfo':makescript('sysinfo',
+        #    'python %s %s %s'%(installtool, tooloptions(), dana_config['centerhosts'][0]))
+        }
+
+def prepare_commands():
+    commands = [prepare_template['prepare'], prepare_template['copy tool']]
+    commands.append(makescript('sysinfo',
+        'python %s %s %s'%(installtool, tooloptions(), dana_config['centerhosts'][0])))
+    return commands
+
+
+
+
+common_template = {
+        'copy files':makecopy("copy files", os.path.join(basedefs.PACKAGE_DIR,'danacenter', common_package),
+            os.path.join(package_dest, common_package)),
+        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, common_package)),
+
+        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh"),
+        }
+
+def common_commands():
+    commands = [common_template['copy files'], common_template['unpack']]
     install = common_template['install']
     target = os.path.join(package_dest,'other', 'install.sh')
     install['command'] = install['command'].format(target, os.path.join(package_dest, 'other'))
     commands.append(install)
 
     # gen localip, nodetype
-    commands.append(makecopy('install_tools', os.path.join(basedefs.DIR_PROJECT_DIR, 'utils', 'installhelper.py'), installtool))
+    commands.append(makecopy('install_tools', 
+        os.path.join(basedefs.DIR_PROJECT_DIR, 'utils', 'installhelper.py'), 
+        installtool))
+
     commands.append(makescript('prepare config', 
         'python %s %s %s'%(installtool, tooloptions(), dana_config['centerhosts'][0])))
-
-
 
     # clustername
     #cfg_command = sed_set_opt('clustername', dana_config['clustername'], common_conf_file)
@@ -175,15 +156,30 @@ def common_commands(config):
     return commands
 
 
-def master_commands(config):
-    commands = [master_template['prepare'], master_template['copy files'], master_template['unpack']]
+
+
+master_template = {
+        'copy files':makecopy("copy files", 
+            os.path.join(basedefs.PACKAGE_DIR,'danacenter', master_package),
+            os.path.join(package_dest, master_package)),
+        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, master_package)),
+
+        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh"),
+        }
+
+def master_commands():
+    commands = [master_template['copy files'], master_template['unpack']]
+
     install = master_template['install']
     target = os.path.join(package_dest,'master', 'install.sh')
     install['command'] = install['command'].format(target, os.path.join(package_dest, 'master'))
     commands.append(install)
 
     # gen localip, nodetype
-    commands.append(makecopy('install_tools', os.path.join(basedefs.DIR_PROJECT_DIR, 'utils', 'installhelper.py'), installtool))
+    commands.append(makecopy('install_tools', 
+        os.path.join(basedefs.DIR_PROJECT_DIR, 'utils', 'installhelper.py'), 
+        installtool))
+
     commands.append(makescript('prepare config', 
         'python %s %s %s'%(installtool, tooloptions(), dana_config['centerhosts'][0])))
 
@@ -219,13 +215,25 @@ def master_commands(config):
     commands.append(makescript('start danastork', '%s start'%danastork))
     commands.append(makescript('start yakmanage', '%s start'%yakmanage))
     commands.append(makescript('start daemon', '%s start'%yakmanagedaemon))
-    commands.append(makescript('reset admin', 'sleep 5 && curl -s -d "name=%s&passwd=%s" "http://%s:10400/user/pwd/reset"'%('admin',
+    commands.append(makescript('reset admin', 
+        'sleep 5 && curl -s -d "name=%s&passwd=%s" "http://%s:10400/user/pwd/reset"'%('admin',
         dana_config['password'], dana_config['centerhosts'][0])))
     return commands
 
 
-def manage_commands(config):
-    commands = [manage_template['prepare'], manage_template['copy files'], manage_template['unpack']]
+
+
+manage_template = {
+        'copy files':makecopy("copy files", os.path.join(basedefs.PACKAGE_DIR, 'danacenter', manage_package),
+            os.path.join(package_dest, manage_package)),
+        'unpack':makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, manage_package)),
+
+        'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh")
+        }
+
+
+def manage_commands():
+    commands = [manage_template['copy files'], manage_template['unpack']]
     install = manage_template['install']
     target = os.path.join(package_dest,'manage', 'install.sh')
     install['command'] = install['command'].format(target, os.path.join(package_dest, 'manage'))
@@ -237,9 +245,16 @@ def manage_commands(config):
     for host in dana_config['managehosts']:
         serveropt += "server.%d=%s:10302:10303\n"%(num, host)
         num +=1
-
+    
     commands.append(makescript("make zoocfg", "echo -e \"%s\" > %s"%(
         zoocfg%serveropt, manage_conf_file)))
+
+    #set myid
+    ipfile = os.path.join(package_dest, "localip")
+    localip = "$(cat %s)"%ipfile
+    getid = r"grep %s %s|sed -e 's/server\.\(.*\)=.*/\1/' > %s"%(localip, manage_conf_file,
+            manage_id_file)
+    commands.append(makescript("set myid", getid))
 
     #start service
     commands.append(makescript('start danaeagles', '%s start'%danaeagles))
@@ -252,9 +267,9 @@ def manage_commands(config):
 
 def buildplan(config):
     parseconfig(config)
-    common_cmds = common_commands(config)
-    master_cmds = master_commands(config)
-    manage_cmds = manage_commands(config)
+    common_cmds = common_commands()
+    master_cmds = master_commands()
+    manage_cmds = manage_commands()
 
     common_seq = core.SequenceTemplate('common_nodes', common_cmds)
     master_seq = core.SequenceTemplate('master_nodes', master_cmds)

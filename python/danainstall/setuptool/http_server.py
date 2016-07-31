@@ -13,10 +13,15 @@ import datetime
 import traceback
 import cgi
 import json
+import paramiko
+import basedefs
+import ConfigParser
+import signal
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 from json import *
 from utils import shell
+from utils import shortcuts
 
 NetWorkIOError = (socket.error, ssl.SSLError, OSError)
 
@@ -31,6 +36,12 @@ def setctl(installctl):
     global controller 
     controller = installctl
 
+
+def getparam(item, params):
+    """
+    for cgi.parse
+    """
+    return params[item][0]
 
 
 class LocalServer(SocketServer.ThreadingTCPServer):
@@ -114,36 +125,108 @@ class Http_Handler(BaseHTTPRequestHandler):
 
 
     def checkip(self, params):
-        host = params['ip'][0]
+        try:
+            host = getparam('ip', params)
+        except KeyError:
+            self.send_response("application/json", json.dumps({'code':400, "msg":"bad request"}))
+            return
+
         code, out = shell.execute("ping -q -W 1 -c 1 %s"%host,
                 can_fail=False, use_shell=True, log=False)
         if code != 0:
-            self.send_response("application/json", json.dumps({'code':500, "msg":"host unreachable"}))
+            self.send_response("application/json", json.dumps({'code':403, "msg":"host unreachable"}))
             return
 
         # test ssh
-        self.send_response('application/json', json.dumps({'code':200, 'host':host}))
+        code =  shortcuts.testssh(host)
+        if code == shortcuts.SSH_OK:
+            self.send_response('application/json', json.dumps({'code':200, 'msg':'host ready'}))
+        elif code == shortcuts.SSH_NOAUTH:
+            self.send_response("application/json", json.dumps({'code':401, 'msg':'need login'}))
+        elif code == shortcuts.SSH_FAILED:
+            self.send_response("application/json", json.dumps({'code':403, 'msg':'ssh service exception'}))
+        return
 
 
     def login(self, params):
-        host = params['ip'][0]
-        user = params['username'][0]
-        pwd = params['password'][0]
+        try:
+            host = getparam('ip', params)
+            user = getparam('username',params)
+            pwd = getparam('password',params)
+        except KeyError:
+            self.send_response("application/json", json.dumps({'code':400, "msg":"bad request"}))
+            return
+
+        try:
+            pri, pub = shortcuts.ssh_key_gen()
+            shortcuts.ssh_key_copy(pub, host, user, pwd)
+        except:
+            self.send_response("application/json", json.dumps({'code':500, "msg":"set ssh-id failed"}))
+            return
 
         self.send_response('application/json', json.dumps({'code':200, 'ret':[host, user, pwd]}))
 
 
+
     def progress(self, params):
-        pass
+        status = controller.status()
+        output = {}
+        for pst in status:
+            for seqst in pst:
+                ip = seqst['host'][seqst['host'].find('@')+1:]
+                msg = seqst['output']
+                err = len(seqst['failed']) > 0
+                if not output.has_key(ip):
+                    output[ip] = {"msg":msg, "err":err}
+                else:
+                    output[ip]['msg'] = ''.join([output[ip]['msg'], msg])
+                    output[ip]['err'] = output[ip]['err'] and err
+
+        #msg = json.dumps(output, indent=2)
+        #msg = json.dumps(status, indent=2)
+        f = [plan for plan in controller.planlist if not plan.finished()]
+        finished = len(f) == 0
+
+        resp = {'info':output, 'install finished':finished}
+
+        self.send_response('application/json',json.dumps(resp, indent = 2))
 
     def install(self, params):
-        master = [ s.strip() for s in params['master'][0].split(';')]
-        manage = [ s.strip() for s in params['zoo'][0].split(';')]
-        other = [ s.strip() for s in params['other'][0].split(';')]
-        engine = [ s.strip() for s in params['engine'][0].split(';')]
-        user = params['uname'][0]
-        pwd = params['pwd'][0]
-        clustername = params['clusterName'][0]
+        try:
+            master = [ s.strip() for s in getparam('master', params).split(';')]
+            manage = [ s.strip() for s in getparam('zoo', params).split(';')]
+            other = [ s.strip() for s in getparam('other',params).split(';')]
+            engine = [ s.strip() for s in getparam('engine',params).split(';')]
+            user = getparam('uname', params)
+            pwd = getparam('pwd', params)
+            clustername = getparam('clusterName', params)
+        except KeyError:
+            self.send_response("application/json", json.dumps({'code':400, "msg":"bad request"}))
+            return
+
+
+        # save to config file
+        conffile = os.path.join(basedefs.DIR_PROJECT_DIR, 'install.conf')
+        utils.shortcuts.baseconfigfile(conffile)
+        config = ConfigParser.SafeConfigParser()
+        config.read(conffile)
+        #common
+        config.set('common', 'clustername', clustername)
+        config.set('common', 'nodes', ','.join(master + manage + other))
+        config.set('common', 'adminpwd', pwd)
+        #danacenter
+        config.set('danacenter', 'centernodes', ','.join(master))
+        config.set('danacenter', 'managenodes', ','.join(manage))
+
+        with open(conffile, 'w') as f:
+            config.write(f)
+
+        lau = launcher.load(conffile)
+
+        ctl = install_control.InstallControl(lau)
+        http_server.setctl(ctl)
+        ctl.start()
+
 
         self.send_response('application/json', json.dumps({'code':200, 'ret':[master, manage, other, engine, user, pwd, clustername]}))
 
@@ -263,6 +346,17 @@ def stop():
     server.server_close()
     process.join()
     process = 0
+
+def wait():
+    while process and process.isAlive():
+        try:
+            process.join(1)
+        except KeyboardInterrupt:
+            print("shutting down server...")
+            stop()
+
+
+
 
 def main():
     start()

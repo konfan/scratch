@@ -4,6 +4,7 @@ import sys
 import collections
 import pshell
 import logging
+from ringbuffer import FifoFileBuffer
 
 
 class Step(object):
@@ -33,19 +34,37 @@ class Step(object):
 
 
     def run(self, *args):
+        self.state = self.RUNNING
         self.retcode, self.msg, self.err = self.function(*args)
-        self.FINISHED
+        self.state = self.FINISHED
 
 
 class Sequence(object):
+    class StreamDup(object):
+        def __init__(self, stream):
+            self.stream = stream
+            self.buf = FifoFileBuffer()
+
+        def write(self, buf):
+            #print('writing************************%s'%buf)
+            self.buf.write(buf)
+            self.stream.write(buf)
+
+        def flush(self):
+            pass
+
+        def read(self, size = None):
+            #print('reading ---------------------------------')
+            return self.buf.read(size)
+    
     def __init__(self, name, commands, target = "", priority = 0, 
             stdout = sys.stdout, stderr = sys.stderr):
         self.name = name
         self.target = target
         self.priority =  priority
         self.steps = collections.OrderedDict()
-        self.stdout = stdout
-        self.stderr = stderr
+        self.stdout = Sequence.StreamDup(stdout)
+        self.stderr = Sequence.StreamDup(stderr)
         for command in commands:
             name, typo = command['name'], command['type']
             if typo == 'script':
@@ -71,14 +90,30 @@ class Sequence(object):
         self.target = target
 
     def stat(self):
+        ret = {'host':self.target,
+                'output':self.stdout.read(),
+                'error':self.stderr.read(),
+                'title':self.name,
+                'success':[],
+                'failed':[]
+                }
         r = []
         for n, o in self.steps.items():
-            tmp = {'name':n, 'state':Sequence.strcode(o.state)}
+            #tmp = {'name':n, 'state':Step.strcode(o.state)}
             if hasattr(o, 'retcode'):
-                tmp['retcode'] = o.retcode
-            r.append(tmp)
+                if o.retcode == 0:
+                    ret['success'].append(n)
+                else:
+                    ret['failed'].append(n)
 
-        return r
+        return ret
+
+    def finished(self):
+        unfinished = filter(lambda x: x != Step.FINISHED, 
+                [step.state for step in self.steps.values()])
+        return len(unfinished) == 0
+
+
 
     def run(self):
         if not self.target:
@@ -125,6 +160,14 @@ class ExecutePlan(object):
 
     def stats(self):
         return [seq.stat() for seq in self.seqs]
+
+    def finished(self):
+        for seq in self.seqs:
+            if not seq.finished():
+                return False
+        return True
+                
+
 
     def __str__(self):
         import json

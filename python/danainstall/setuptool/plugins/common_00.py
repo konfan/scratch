@@ -86,7 +86,7 @@ def maketemplate():
 
     commands.append(makescript("tuning limit", "echo -e \"%s\" > /etc/security/limits.d/10-dana_limit_tuning.conf"%flimit_tuning))
     commands.append(makescript("tuning network", "echo -e \"%s\" > /etc/sysctl.d/dana_tcp_tuning.conf"%tcp_tuning))
-    commands.append(makescript("tuning", "sysctl --system"))
+    commands.append(makescript("apply tuning", "sysctl --system"))
 
     return core.SequenceTemplate('common', commands)
 
