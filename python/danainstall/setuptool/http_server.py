@@ -17,7 +17,9 @@ import paramiko
 import basedefs
 import ConfigParser
 import signal
-
+import launcher
+import install_control
+import http_server
 from BaseHTTPServer import BaseHTTPRequestHandler
 from json import *
 from utils import shell
@@ -159,7 +161,8 @@ class Http_Handler(BaseHTTPRequestHandler):
 
         try:
             pri, pub = shortcuts.ssh_key_gen()
-            shortcuts.ssh_key_copy(pub, host, user, pwd)
+            with open(pub, 'r') as f:
+                shortcuts.ssh_key_copy(f.read(), host, user, pwd)
         except:
             self.send_response("application/json", json.dumps({'code':500, "msg":"set ssh-id failed"}))
             return
@@ -187,7 +190,7 @@ class Http_Handler(BaseHTTPRequestHandler):
         f = [plan for plan in controller.planlist if not plan.finished()]
         finished = len(f) == 0
 
-        resp = {'info':output, 'install finished':finished}
+        resp = {'info':output, 'finished':finished}
 
         self.send_response('application/json',json.dumps(resp, indent = 2))
 
@@ -207,16 +210,22 @@ class Http_Handler(BaseHTTPRequestHandler):
 
         # save to config file
         conffile = os.path.join(basedefs.DIR_PROJECT_DIR, 'install.conf')
-        utils.shortcuts.baseconfigfile(conffile)
+        shortcuts.baseconfigfile(conffile)
         config = ConfigParser.SafeConfigParser()
         config.read(conffile)
+
+        allnodes = filter(lambda x:x, master + manage + other)
         #common
         config.set('common', 'clustername', clustername)
-        config.set('common', 'nodes', ','.join(master + manage + other))
+        config.set('common', 'nodes', allnodes)
         config.set('common', 'adminpwd', pwd)
         #danacenter
         config.set('danacenter', 'centernodes', ','.join(master))
         config.set('danacenter', 'managenodes', ','.join(manage))
+
+		#engine
+        for e in engine:
+            config.set(e, 'hosts', allnodes)
 
         with open(conffile, 'w') as f:
             config.write(f)
@@ -269,7 +278,6 @@ class Http_Handler(BaseHTTPRequestHandler):
                 # TODO: add log
                 return
         params = self.parse_POST()      
-        url_path_list = self.path.split('/')
         f = seekapi(self.path)
         f(params)
         return 

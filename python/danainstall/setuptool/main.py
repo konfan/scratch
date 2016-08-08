@@ -68,7 +68,7 @@ def main():
     install_control.initlogger(options.debug)
 
     if options.daemon:
-        daemon_mode
+        daemon_mode()
     else:
         conffile = options.config
         command_mode(conffile, options.debug)

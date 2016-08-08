@@ -267,10 +267,12 @@ def manage_commands():
 
 def buildplan(config):
     parseconfig(config)
+    pre_cmds = prepare_commands()
     common_cmds = common_commands()
     master_cmds = master_commands()
     manage_cmds = manage_commands()
 
+    pre_seq = core.SequenceTemplate('pre_seq', pre_cmds)
     common_seq = core.SequenceTemplate('common_nodes', common_cmds)
     master_seq = core.SequenceTemplate('master_nodes', master_cmds)
     manage_seq = core.SequenceTemplate('manage_nodes', manage_cmds)
@@ -279,11 +281,11 @@ def buildplan(config):
     hosts = ['%s@%s'%(dana_config['user'], x.strip()) for x in dana_config['hosts']] 
     chosts = ['%s@%s'%(dana_config['user'], x.strip()) for x in dana_config['centerhosts']]
     mhosts = ['%s@%s'%(dana_config['user'], x.strip()) for x in dana_config['managehosts']]
-    
-    
-    mplan = core.ExecutePlan('manage_nodes', manage_seq, mhosts, 1)
-    oplan = core.ExecutePlan('common_nodes', common_seq, hosts, 2)
-    cplan = core.ExecutePlan('master_nodes', master_seq, chosts, 3)
 
-    return [mplan, oplan, cplan]
+    preplan = core.ExecutePlan("prepare", pre_seq, hosts, 1)
+    mplan = core.ExecutePlan('manage_nodes', manage_seq, mhosts, 2)
+    oplan = core.ExecutePlan('common_nodes', common_seq, hosts, 3)
+    cplan = core.ExecutePlan('master_nodes', master_seq, chosts, 4)
+
+    return [preplan, mplan, oplan, cplan]
     #return [manage_cmds, master_cmds, common_cmds]

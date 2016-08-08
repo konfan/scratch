@@ -36,18 +36,18 @@ install_template = {
             "type":"script",
             "command":"mkdir -p %s"%package_dest
             },
-        "copy files":makecopy('copy file', os.path.join(basedefs.PACKAGE_DIR, eagles_package),
-            eagles_package),
+        "copy files":makecopy('copy files', os.path.join(basedefs.PACKAGE_DIR, eagles_package),
+           os.path.join(package_dest, eagles_package)),
         "unpack":makescript('unpack', 'cd %s && tar zxf %s'%(package_dest, eagles_package)),
 
         'install':makescript('install', "chmod a+x {0} && cd {1} && ./install.sh".format(
             os.path.join(package_dest, 'eagles', 'install.sh'),
-            os.path.join(package_dest, 'eagles'))
+            os.path.join(package_dest, 'eagles')))
         }
 
 def maketemplate():
     commands = [install_template['prepare'], 
-        install_template['copy_files'],
+        install_template['copy files'],
         install_template['unpack'],
         install_template['install']]
 

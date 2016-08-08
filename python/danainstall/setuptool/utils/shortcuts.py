@@ -108,6 +108,9 @@ def testssh(host):
 
 
 def ssh_key_gen(keyfile=os.path.expanduser("~/.ssh/id_rsa")):
+    """
+    local
+    """
     cmd = "/usr/bin/ssh-keygen -q -f %s -t rsa -N"%keyfile
     args = cmd.split()
     args.append("")
@@ -118,20 +121,30 @@ def ssh_key_gen(keyfile=os.path.expanduser("~/.ssh/id_rsa")):
     return keyfile, '%s.pub'%keyfile
 
 
-def ssh_key_copy(pubkey, host, user, password):
-    with open(pubkey,'r') as f:
-        pkey = f.read()
+
+def ssh_key_copy(pkey, host, user, password):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(host, username='root', password = password, timeout=2)
     i,o,e = client.exec_command("mkdir -p ~/.ssh && chmod 700 ~/.ssh")
-    #print('mkdir :' + o.read())
-    #print('mkdir e:' + e.read())
     o.read(), e.read()
     cmd = "echo \"%s\" >> ~/.ssh/authorized_keys"%pkey
-    #print(cmd)
     i,o,e = client.exec_command(cmd)
     o.read(), e.read()
+    i,o,e = client.exec_command("chmod 600 ~/.ssh/authorized_keys")
+    o.read(), e.read()
+
+def ssh_read_key(host, user, password):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(host, username='root', password = password, timeout=2)
+    i,o,e = client.exec_command("cat ~/.ssh/id_rsa.pub")
+    if e.read():
+        i,o,e = client.exec_command("ssh-keygen -q -f ~/.ssh/id_rsa -t rsa -N ''")
+    i,o,e = client.exec_command("cat ~/.ssh/id_rsa.pub")
+    return o.read()
+
+
 
 
 def baseconfigfile(fpath):
@@ -153,17 +166,17 @@ managenodes = 192.168.40.130
 [eagles]
 hosts = 192.168.40.130
 
-
 [crab]
-hostlist = 192.168.3.98
-
+hosts = 192.168.3.98
 
 [stork]
-hostlist = 192.168.3.22
-
+hosts = 192.168.3.22
 
 [leopard]
-hostlist = 192.168.1.95
+hosts = 192.168.1.95
+
+[dodo]
+hosts = 192.168.1.22
 """
     with open(fpath, 'w') as f:
         f.write(basefile)
