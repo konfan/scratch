@@ -214,10 +214,10 @@ class Http_Handler(BaseHTTPRequestHandler):
         config = ConfigParser.SafeConfigParser()
         config.read(conffile)
 
-        allnodes = filter(lambda x:x, master + manage + other)
+        allnodes = list(set(filter(lambda x:x, master + manage + other)))
         #common
         config.set('common', 'clustername', clustername)
-        config.set('common', 'nodes', allnodes)
+        config.set('common', 'nodes', ','.join(allnodes))
         config.set('common', 'adminpwd', pwd)
         #danacenter
         config.set('danacenter', 'centernodes', ','.join(master))
@@ -225,7 +225,7 @@ class Http_Handler(BaseHTTPRequestHandler):
 
 		#engine
         for e in engine:
-            config.set(e, 'hosts', allnodes)
+            config.set(e, 'hosts', ','.join(allnodes))
 
         with open(conffile, 'w') as f:
             config.write(f)

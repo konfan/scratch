@@ -9,6 +9,7 @@ import datetime
 import os
 import sys
 import tempfile
+import re
 
 from utils import get_current_user
 
@@ -67,3 +68,19 @@ DANA_DIR = "/opt/dana"
 
 INSTALL_CACHE_DIR = "/opt/dana/installtmp"
 
+
+def findpackage(folder, engine):
+    """
+    find engine tar package in [folder]  eg. eagles.3.22.1.tar.gz
+    return filename, version  eg. eagles.3.22.1.tar.gz, 3.22.1
+    """
+    pattern = re.compile(r"^%s\.?(.*)\.tar\.gz$"%engine)
+    try:
+        for f in os.listdir(folder):
+            m =  pattern.match(f)
+            if m:
+                version = m.groups()[0]
+                return f, version
+    except OSError:
+        return "", ""
+    return "",""
