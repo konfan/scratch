@@ -15,7 +15,7 @@ crab_config = {
 
         }
 
-crab_package = "crab.tar.gz"
+crab_package, version = basedefs.findpackage(basedefs.PACKAGE_DIR,"crab")
 
 
 
@@ -23,7 +23,7 @@ crab_package = "crab.tar.gz"
 def baseconfig(config):
     global crab_config
     l = config.get('crab', 'hosts')
-    crab_config['hosts'] = [s.strip() for s in l.split(',')]
+    crab_config['hosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
     #TODO check ip list
     l = config.get('danacenter', 'centernodes')
     crab_config['centerhosts'] = [s.strip() for s in l.split(',')]

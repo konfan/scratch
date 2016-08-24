@@ -43,7 +43,7 @@ def get_nodetype(ip):
 
 
 def initParser():
-    usage = "usage: %prog [options] [--help]"
+    usage = "usage: %prog [options] [--help] centerip"
     parser = OptionParser(usage=usage, version="0.1")
 
     parser.add_option("-m", "--manage",  help="manage nodes", default = "")

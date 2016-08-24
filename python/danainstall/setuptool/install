@@ -8,6 +8,9 @@ import signal
 from optparse import OptionParser
 
 
+port = 8999
+
+
 def initCmdLineParser():
     """
     Initiate the optparse object, add all the groups and general command line flags
@@ -21,6 +24,9 @@ def initCmdLineParser():
     parser.add_option("-d", "--daemon", action="store_true", default=False, help="daemon mode")
     parser.add_option("-c", "--config", help="install config file", default = 'test.conf')
     parser.add_option("-D", "--debug", action="store_true", help="debug mode", default = False)
+
+    parser.add_option("-a", "--add", action="store_true", help="add node to cluster", default = False)
+    parser.add_option("-p", "--port", help= "http server port", default = '8999')
 
 
     return parser
@@ -36,7 +42,7 @@ def printOptions():
 
 
 def daemon_mode():
-    http_server.start()
+    http_server.start(port)
     http_server.wait()
 
 
@@ -47,18 +53,48 @@ def command_mode(conffile, debug = False):
     ctl = install_control.InstallControl(lau)
     http_server.setctl(ctl)
     ctl.start()
-    http_server.start()
+    http_server.start(port)
     ctl.wait()
 
     http_server.wait()
     ctl.stop()
     http_server.stop()
 
+
+def add_mode(conffile, debug = False):
+    """
+    install common nodes only
+    """
+    install_control.initlogger(debug)
+    lau = launcher.load(conffile)
+    lau['danacenter'].install_center = False
+    lau['danacenter'].install_manage = False
+
+    #ctl = install_control.InstallControl(lau)
+    #for x in ctl.planlist:
+    #    print x.name, x.stats()
+    #    for seq in x.seqs:
+    #        for step in seq.steps.values():
+    #            if hasattr(step.function, 'cmd'):
+    #                print step.function.cmd
+
+    #return
+    http_server.setctl(ctl)
+    ctl.start()
+    http_server.start(port)
+    ctl.wait()
+
+    http_server.wait()
+    ctl.stop()
+    http_server.stop()
+
+
     
 
 
 def main():
     import sys
+    global port
     opt = initCmdLineParser()
     if (len(sys.argv) == 1):
         opt.print_help()
@@ -68,11 +104,18 @@ def main():
 
     install_control.initlogger(options.debug)
 
+    port = int(options.port)
+
+    
     if options.daemon:
         daemon_mode()
     else:
         conffile = options.config
-        command_mode(conffile, options.debug)
+        if options.add:
+            add_mode(conffile, options.debug)
+        else:
+            command_mode(conffile, options.debug)
+
 
 
 

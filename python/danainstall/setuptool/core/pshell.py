@@ -7,6 +7,7 @@ import re
 import select
 import time
 import logging
+import ringbuffer
 
 
 def DefaultHook(runret):
@@ -32,6 +33,10 @@ class RemoteCommand(object):
         self.retcode = None
         self.stdout = stdout
         self.stderr = stderr
+
+        self.obuf = ringbuffer.FifoFileBuffer()
+        self.ebuf = ringbuffer.FifoFileBuffer()
+
 
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -66,15 +71,19 @@ class RemoteCommand(object):
                 if channel.recv_ready():
                     tmp = channel.recv(256)
                     while len(tmp) > 0:
-                        output = ''.join([output, tmp])
-                        self.stdout.write(tmp)
+                        self.obuf.write(tmp)
+                        lines = self.obuf.readlines()
+                        output = output + ''.join(lines)
+                        map(self.stdout.write, lines)
                         tmp = channel.recv(256)
 
                 if channel.recv_stderr_ready():
                     tmp = channel.recv_stderr(256)
                     while len(tmp) > 0:
-                        err = ''.join([err, tmp])
-                        self.stderr.write(tmp)
+                        self.ebuf.write(tmp)
+                        lines = self.ebuf.readlines()
+                        err = err + ''.join(lines)
+                        map(self.stderr.write, lines)
                         tmp = channel.recv_stderr(256)
 
         return channel.recv_exit_status(), output, err

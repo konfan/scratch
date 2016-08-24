@@ -1,6 +1,7 @@
 #-*- coding: utf-8
 #vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 from cStringIO import StringIO
+import threading
 
 class FifoFileBuffer(object):
     def __init__(self):
@@ -9,8 +10,16 @@ class FifoFileBuffer(object):
         self.size = 10
         self.write_fp = 0
         self.read_fp = 0
+        self.mutex = threading.Lock()
 
     def read(self, size = None):
+        self.mutex.acquire()
+        try:
+            return self._read(size)
+        finally:
+            self.mutex.release()
+
+    def _read(self, size = None):
         """Reads size bytes from buffer"""
         if size is None or size > self.available:
             size = self.available
@@ -22,16 +31,14 @@ class FifoFileBuffer(object):
         if len(result) < size:
             self.buf.seek(0)
             result += self.buf.read(size - len(result))
-
         return result
 
-
-    def write(self, data):
+    def _write(self, data):
         """Appends data to buffer"""
         if self.size < self.available + len(data):
             # Expand buffer
             new_buf = StringIO()
-            new_buf.write(self.read())
+            new_buf.write(self._read())
             self.write_fp = self.available = new_buf.tell()
             read_fp = 0
             while self.size <= self.available + len(data):
@@ -51,3 +58,38 @@ class FifoFileBuffer(object):
             self.buf.seek(0)
             self.buf.write(data[written:])
         self.buf.seek(read_fp)
+
+
+
+    def write(self, data):
+        self.mutex.acquire()
+        try:
+            self._write(data)
+        finally:
+            self.mutex.release()
+
+    def readline(self):
+        self.mutex.acquire()
+        try:
+            c = self._read(1)
+            l = ""
+            while c:
+                l += c
+                if c == '\n':
+                    break
+                c = self._read(1)
+
+            if len(l) > 0 and l[-1] != '\n':
+                self._write(l)
+                l = ""
+            return l
+        finally:
+            self.mutex.release()
+
+    def readlines(self):
+        r = []
+        l = self.readline()
+        while l:
+            r.append(l)
+            l = self.readline()
+        return r

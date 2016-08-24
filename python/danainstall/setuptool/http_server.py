@@ -329,11 +329,10 @@ class Http_Handler(BaseHTTPRequestHandler):
 
 process = 0
 server = 0
-def start():
+def start(host_port):
     global process, server
     # should use config.yaml to bing ip
     allow_remote = True
-    host_port = 8999
 
     if allow_remote:
         host_addr = "0.0.0.0"

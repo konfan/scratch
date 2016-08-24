@@ -15,7 +15,7 @@ eagles_config = {
 
         }
 
-eagles_package = "eagles.tar.gz"
+eagles_package, version = basedefs.findpackage(basedefs.PACKAGE_DIR, "eagles")
 
 
 
@@ -23,10 +23,10 @@ eagles_package = "eagles.tar.gz"
 def baseconfig(config):
     global eagles_config
     l = config.get('eagles', 'hosts')
-    eagles_config['hosts'] = [s.strip() for s in l.split(',')]
+    eagles_config['hosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
     #TODO check ip list
     l = config.get('danacenter', 'centernodes')
-    eagles_config['centerhosts'] = [s.strip() for s in l.split(',')]
+    eagles_config['centerhosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
 
 
 

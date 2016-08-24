@@ -15,7 +15,7 @@ stork_config = {
 
         }
 
-stork_package = "stork.tar.gz"
+stork_package, version = basedefs.findpackage(basedefs.PACKAGE_DIR, "stork")
 
 
 
@@ -23,10 +23,10 @@ stork_package = "stork.tar.gz"
 def baseconfig(config):
     global stork_config
     l = config.get('stork', 'hosts')
-    stork_config['hosts'] = [s.strip() for s in l.split(',')]
+    stork_config['hosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
     #TODO check ip list
     l = config.get('danacenter', 'centernodes')
-    stork_config['centerhosts'] = [s.strip() for s in l.split(',')]
+    stork_config['centerhosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
 
 
 

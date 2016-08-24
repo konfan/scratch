@@ -97,11 +97,11 @@ def testssh(host):
     try:
         client.connect(host, username='root', timeout=2 )
         return SSH_OK 
-    except paramiko.ssh_exception.AuthenticationException:
+    except (paramiko.ssh_exception.AuthenticationException, paramiko.ssh_exception.SSHException):
         return SSH_NOAUTH
-    except (paramiko.ssh_exception.SSHException, 
-            paramiko.ssh_exception.NoValidConnectionsError,
-            socket.timeout):
+    except (paramiko.ssh_exception.NoValidConnectionsError,
+            socket.timeout) as e:
+        print type(e), e
         return SSH_FAILED
     finally:
         client.close()
@@ -164,19 +164,19 @@ managenodes = 192.168.40.130
 
 
 [eagles]
-hosts = 192.168.40.130
+hosts = 
 
 [crab]
-hosts = 192.168.3.98
+hosts = 
 
 [stork]
-hosts = 192.168.3.22
+hosts = 
 
 [leopard]
-hosts = 192.168.1.95
+hosts = 
 
 [dodo]
-hosts = 192.168.1.22
+hosts = 
 """
     with open(fpath, 'w') as f:
         f.write(basefile)

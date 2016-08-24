@@ -15,7 +15,7 @@ leopard_config = {
 
         }
 
-leopard_package = "leopard.tar.gz"
+leopard_package, version = basedefs.findpackage(basedefs.PACKAGE_DIR, "leopard")
 
 
 
@@ -23,10 +23,10 @@ leopard_package = "leopard.tar.gz"
 def baseconfig(config):
     global leopard_config
     l = config.get('leopard', 'hosts')
-    leopard_config['hosts'] = [s.strip() for s in l.split(',')]
+    leopard_config['hosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
     #TODO check ip list
     l = config.get('danacenter', 'centernodes')
-    leopard_config['centerhosts'] = [s.strip() for s in l.split(',')]
+    leopard_config['centerhosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
 
 
 

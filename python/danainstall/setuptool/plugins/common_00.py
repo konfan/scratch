@@ -11,14 +11,15 @@ package_dest = basedefs.INSTALL_CACHE_DIR
 common_config = {
         "hosts":[]
         }
-common_package = 'common.tar.gz'
+#common_package = 'common.tar.gz'
+common_package, verison = basedefs.findpackage(basedefs.PACKAGE_DIR,'common')
 
 
 def baseconfig(config):
     global common_config
     l = config.get('common', 'nodes')
-    common_config['hosts'] = l.split(',')
-    common_config['user'] = config.get('common', 'installuser')
+    common_config['hosts'] = filter(lambda x:x, l.split(','))
+    common_config['user'] = config.get('common', 'installuser', 'root')
 
 
 

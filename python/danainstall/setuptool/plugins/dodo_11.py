@@ -15,7 +15,7 @@ dodo_config = {
 
         }
 
-dodo_package = "dodo.tar.gz"
+dodo_package, version = basedefs.findpackage(basedefs.PACKAGE_DIR, "dodo")
 
 
 
@@ -23,10 +23,10 @@ dodo_package = "dodo.tar.gz"
 def baseconfig(config):
     global dodo_config
     l = config.get('dodo', 'hosts')
-    dodo_config['hosts'] = [s.strip() for s in l.split(',')]
+    dodo_config['hosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
     #TODO check ip list
     l = config.get('danacenter', 'centernodes')
-    dodo_config['centerhosts'] = [s.strip() for s in l.split(',')]
+    dodo_config['centerhosts'] = filter(lambda x:x, [s.strip() for s in l.split(',')])
 
 
 
