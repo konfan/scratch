@@ -1,8 +1,9 @@
-*
 *.o
 *.so
 *.pyc
-.*.*
-!/**/
-!*.*
+*.pyo
+*.out
+*.exe
+*.test
+*.dll
 !.gitignore
