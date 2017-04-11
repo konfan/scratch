@@ -4,7 +4,6 @@ import "fmt"
 
 type ErrorNegative float64
 
-
 func (e ErrorNegative) String() string {
 	return ""
 }
@@ -12,7 +11,6 @@ func (e ErrorNegative) String() string {
 func (e ErrorNegative) Error() string {
 	return ""
 }
-
 
 func check1(val interface{}) {
 	switch val.(type) {
